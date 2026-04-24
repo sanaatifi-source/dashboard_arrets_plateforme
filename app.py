@@ -343,7 +343,6 @@ def priority_from_duration(duree_h, total_h):
 
 
 def action_recommendation(row):
-    equip = normalize_text(row.get("Equipement", ""))
     duree = float(row.get("Duree_h", 0))
     nb = int(row.get("Nb_arrets", 0)) if "Nb_arrets" in row else 0
 
@@ -357,7 +356,7 @@ def action_recommendation(row):
 
 
 # =========================================================
-# DATA
+# CHARGEMENT DES DONNÉES
 # =========================================================
 def load_raw_data(uploaded_file, sheet_name=None):
     suffix = Path(uploaded_file.name).suffix.lower()
@@ -449,7 +448,7 @@ def maintenance_category(text):
 
 
 # =========================================================
-# KPI
+# CALCUL KPI
 # =========================================================
 def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_realise, taux_qualite):
     data = df.copy()
@@ -518,10 +517,13 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
         .reset_index()
         .sort_values("Duree_h", ascending=False)
     )
+
     equip_diag["TAG_Equipement"] = equip_diag["TAG"].astype(str) + " | " + equip_diag["Equipement"].astype(str)
 
     total_arrets_all = equip_diag["Duree_h"].sum() if not equip_diag.empty else 0.0
-    equip_diag["Part_globale_%"] = equip_diag["Duree_h"].apply(lambda x: round((x / total_arrets_all * 100), 2) if total_arrets_all > 0 else 0.0)
+    equip_diag["Part_globale_%"] = equip_diag["Duree_h"].apply(
+        lambda x: round((x / total_arrets_all * 100), 2) if total_arrets_all > 0 else 0.0
+    )
     equip_diag["Priorité"] = equip_diag["Duree_h"].apply(lambda x: priority_from_duration(x, total_arrets_all))
     equip_diag["Action recommandée"] = equip_diag.apply(action_recommendation, axis=1)
 
@@ -595,7 +597,7 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
 
 
 # =========================================================
-# ANALYSE AUTO
+# ANALYSE AUTOMATIQUE
 # =========================================================
 def generate_executive_summary(kpis):
     messages = []
@@ -631,25 +633,32 @@ def generate_executive_summary(kpis):
 def generate_alerts(kpis, obj_trs, obj_dispo, seuil_mttr, seuil_mtbf):
     alerts = []
 
-    if kpis["trs"] < obj_trs:
-        alerts.append(("danger", f"TRS inférieur à l’objectif : {kpis['trs']} % < {obj_trs} %."))
-    else:
-        alerts.append(("success", f"TRS conforme à l’objectif : {kpis['trs']} % ≥ {obj_trs} %."))
+    if obj_trs > 0:
+        if kpis["trs"] < obj_trs:
+            alerts.append(("danger", f"TRS inférieur à l’objectif saisi : {kpis['trs']} % < {obj_trs} %."))
+        else:
+            alerts.append(("success", f"TRS conforme à l’objectif saisi : {kpis['trs']} % ≥ {obj_trs} %."))
 
-    if kpis["disponibilite"] < obj_dispo:
-        alerts.append(("danger", f"Disponibilité inférieure à l’objectif : {kpis['disponibilite']} % < {obj_dispo} %."))
-    else:
-        alerts.append(("success", f"Disponibilité conforme à l’objectif : {kpis['disponibilite']} % ≥ {obj_dispo} %."))
+    if obj_dispo > 0:
+        if kpis["disponibilite"] < obj_dispo:
+            alerts.append(("danger", f"Disponibilité inférieure à l’objectif saisi : {kpis['disponibilite']} % < {obj_dispo} %."))
+        else:
+            alerts.append(("success", f"Disponibilité conforme à l’objectif saisi : {kpis['disponibilite']} % ≥ {obj_dispo} %."))
 
-    if kpis["mttr"] > seuil_mttr:
-        alerts.append(("danger", f"MTTR élevé : {kpis['mttr']} h > seuil {seuil_mttr} h."))
-    else:
-        alerts.append(("success", f"MTTR maîtrisé : {kpis['mttr']} h ≤ seuil {seuil_mttr} h."))
+    if seuil_mttr > 0:
+        if kpis["mttr"] > seuil_mttr:
+            alerts.append(("danger", f"MTTR supérieur au seuil saisi : {kpis['mttr']} h > {seuil_mttr} h."))
+        else:
+            alerts.append(("success", f"MTTR conforme au seuil saisi : {kpis['mttr']} h ≤ {seuil_mttr} h."))
 
-    if kpis["mtbf"] > 0 and kpis["mtbf"] < seuil_mtbf:
-        alerts.append(("danger", f"MTBF faible : {kpis['mtbf']} h < seuil {seuil_mtbf} h."))
-    elif kpis["mtbf"] > 0:
-        alerts.append(("success", f"MTBF acceptable : {kpis['mtbf']} h ≥ seuil {seuil_mtbf} h."))
+    if seuil_mtbf > 0:
+        if kpis["mtbf"] > 0 and kpis["mtbf"] < seuil_mtbf:
+            alerts.append(("danger", f"MTBF inférieur au seuil saisi : {kpis['mtbf']} h < {seuil_mtbf} h."))
+        elif kpis["mtbf"] > 0:
+            alerts.append(("success", f"MTBF conforme au seuil saisi : {kpis['mtbf']} h ≥ {seuil_mtbf} h."))
+
+    if not alerts:
+        alerts.append(("info", "Aucun seuil KPI n’a été saisi. Les alertes automatiques sont désactivées."))
 
     return alerts
 
@@ -911,7 +920,12 @@ def generate_pdf_report(kpis, params, alerts):
 
         add_pdf_table_page(pdf, "Bloc KPI détaillé", kpis["bloc_kpi"], max_rows=20)
         add_pdf_table_page(pdf, "Synthèse maintenance", kpis["rep_maintenance_final"], max_rows=10)
-        add_pdf_table_page(pdf, "Diagnostic et plan d'action", kpis["equip_diag"][["TAG_Equipement", "Duree_h", "Nb_arrets", "Part_globale_%", "Priorité", "Action recommandée"]], max_rows=10)
+        add_pdf_table_page(
+            pdf,
+            "Diagnostic et plan d'action",
+            kpis["equip_diag"][["TAG_Equipement", "Duree_h", "Nb_arrets", "Part_globale_%", "Priorité", "Action recommandée"]],
+            max_rows=10
+        )
 
         fig_zone = make_pdf_bar_plot(kpis["rep_zone"], "Zone", "Duree_h", "Répartition des arrêts par zone", top_n=12)
         pdf.savefig(fig_zone, bbox_inches="tight")
@@ -1016,12 +1030,12 @@ taux_qualite_pct = st.sidebar.number_input("Taux de qualité (%)", min_value=0.0
 taux_qualite = taux_qualite_pct / 100
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Objectifs & seuils")
+st.sidebar.subheader("Seuils KPI à définir par l'utilisateur")
 
-obj_trs = st.sidebar.number_input("Objectif TRS (%)", min_value=0.0, max_value=200.0, value=80.0, step=1.0)
-obj_dispo = st.sidebar.number_input("Objectif disponibilité (%)", min_value=0.0, max_value=100.0, value=85.0, step=1.0)
-seuil_mttr = st.sidebar.number_input("Seuil MTTR critique (h)", min_value=0.0, value=4.0, step=0.5)
-seuil_mtbf = st.sidebar.number_input("Seuil MTBF minimum (h)", min_value=0.0, value=20.0, step=1.0)
+obj_trs = st.sidebar.number_input("Saisir l’objectif TRS (%)", min_value=0.0, max_value=200.0, value=0.0, step=1.0)
+obj_dispo = st.sidebar.number_input("Saisir l’objectif disponibilité (%)", min_value=0.0, max_value=100.0, value=0.0, step=1.0)
+seuil_mttr = st.sidebar.number_input("Saisir le seuil MTTR max acceptable (h)", min_value=0.0, value=0.0, step=0.5)
+seuil_mtbf = st.sidebar.number_input("Saisir le seuil MTBF min acceptable (h)", min_value=0.0, value=0.0, step=1.0)
 
 
 if uploaded_file is None:
@@ -1127,19 +1141,19 @@ if page == "Dashboard principal":
 
     st.subheader("Alertes KPI")
     for level, msg in alerts:
-        css_class = "danger-box" if level == "danger" else "success-box"
+        css_class = "danger-box" if level == "danger" else "success-box" if level == "success" else "alert-box"
         st.markdown(f'<div class="{css_class}">{msg}</div>', unsafe_allow_html=True)
 
     m1, m2, m3, m4 = st.columns(4)
 
     with m1:
-        render_info_card("TRS", f"{kpis['trs']} %", f"Objectif : {obj_trs} %")
+        render_info_card("TRS", f"{kpis['trs']} %", "Objectif saisi" if obj_trs > 0 else "Aucun objectif saisi")
     with m2:
-        render_info_card("Disponibilité", f"{kpis['disponibilite']} %", f"Objectif : {obj_dispo} %")
+        render_info_card("Disponibilité", f"{kpis['disponibilite']} %", "Objectif saisi" if obj_dispo > 0 else "Aucun objectif saisi")
     with m3:
-        render_info_card("MTBF", f"{kpis['mtbf']} h", f"Seuil min : {seuil_mtbf} h")
+        render_info_card("MTBF", f"{kpis['mtbf']} h", "Seuil saisi" if seuil_mtbf > 0 else "Aucun seuil saisi")
     with m4:
-        render_info_card("MTTR", f"{kpis['mttr']} h", f"Seuil max : {seuil_mttr} h")
+        render_info_card("MTTR", f"{kpis['mttr']} h", "Seuil saisi" if seuil_mttr > 0 else "Aucun seuil saisi")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1331,12 +1345,17 @@ elif page == "Diagnostic & Plan d’action":
             Nombre=("TAG_Equipement", "count"),
             Duree_totale_h=("Duree_h", "sum")
         ).reset_index()
+
+        priority_table = priority_table.rename(columns={
+            "Duree_totale_h": "Durée totale des arrêts (h)"
+        })
+
         st.dataframe(priority_table, use_container_width=True, height=200)
 
         fig_priority = make_dark_bar_plot(
             priority_table,
             x_col="Priorité",
-            y_col="Duree_totale_h",
+            y_col="Durée totale des arrêts (h)",
             title="Durée totale par niveau de priorité",
             xlabel="Priorité",
             ylabel="Durée (h)",
@@ -1389,6 +1408,13 @@ elif page == "Aide":
 
     st.subheader("Colonnes optionnelles")
     st.write(["Famille", "Causes majeures"])
+
+    st.subheader("Seuils KPI")
+    st.write(
+        "Les seuils KPI ne sont pas fixés automatiquement. "
+        "Ils doivent être saisis par l'utilisateur dans la barre latérale. "
+        "Si aucun seuil n'est saisi, les alertes automatiques sont désactivées."
+    )
 
     st.subheader("Formules KPI utilisées")
     st.write("Temps Requis = Temps d'ouverture - Arrêts planifiés")
