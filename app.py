@@ -26,7 +26,7 @@ LOGO_PATH = Path("logoo_v2.png")
 st.markdown("""
 <style>
 .stApp {
-    background: linear-gradient(180deg, #07101f 0%, #0b1326 100%) !important;
+    background: #000000 !important;
     color: #e5eefc !important;
 }
 
@@ -37,8 +37,8 @@ div[data-testid="stDecoration"] {
 }
 
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0c172a 0%, #101d33 100%) !important;
-    border-right: 1px solid rgba(242, 178, 51, 0.16);
+    background: #050505 !important;
+    border-right: 1px solid rgba(242, 178, 51, 0.20);
 }
 
 html, body, [class*="css"], [data-testid="stAppViewContainer"] {
@@ -57,13 +57,13 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
 
 /* HEADER */
 .main-header {
-    background: linear-gradient(180deg, #07101f 0%, #0b1326 100%);
-    border: 1px solid rgba(242, 178, 51, 0.22);
+    background: #000000;
+    border: 1px solid rgba(242, 178, 51, 0.32);
     border-radius: 28px;
     padding: 34px 40px 38px 40px;
     margin-bottom: 28px;
     text-align: center;
-    box-shadow: 0px 14px 34px rgba(0, 0, 0, 0.32);
+    box-shadow: 0px 14px 34px rgba(0, 0, 0, 0.45);
 }
 
 .logo-center {
@@ -74,7 +74,7 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
 }
 
 .main-logo {
-    width: 480px;
+    width: 520px;
     max-width: 90%;
     height: auto;
     object-fit: contain;
@@ -107,11 +107,11 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
 
 /* CARDS */
 .custom-card {
-    background: linear-gradient(180deg, #112036 0%, #0e1a2d 100%);
-    border: 1px solid rgba(242, 178, 51, 0.16);
+    background: #050505;
+    border: 1px solid rgba(242, 178, 51, 0.18);
     border-radius: 18px;
     padding: 17px 19px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     margin-bottom: 12px;
 }
 
@@ -136,12 +136,12 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
 }
 
 .executive-box {
-    background: linear-gradient(180deg, #10213a 0%, #0d192d 100%);
+    background: #050505;
     border: 1px solid rgba(242, 178, 51, 0.18);
     border-radius: 18px;
     padding: 18px 20px;
     margin-bottom: 16px;
-    box-shadow: 0px 8px 22px rgba(0, 0, 0, 0.22);
+    box-shadow: 0px 8px 22px rgba(0, 0, 0, 0.35);
 }
 
 .section-chip {
@@ -157,27 +157,27 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
 }
 
 input, textarea {
-    background-color: #132238 !important;
+    background-color: #111111 !important;
     color: #ffffff !important;
     border-radius: 10px !important;
 }
 
 div[data-baseweb="select"] > div {
-    background-color: #132238 !important;
+    background-color: #111111 !important;
     color: #ffffff !important;
     border-radius: 10px !important;
     border: 1px solid rgba(242, 178, 51, 0.14) !important;
 }
 
 section[data-testid="stFileUploader"] {
-    background: #132238 !important;
+    background: #111111 !important;
     border: 1px solid rgba(242, 178, 51, 0.14) !important;
     border-radius: 14px !important;
     padding: 10px !important;
 }
 
 div[data-testid="stDataFrame"] {
-    background: #0f1c2f !important;
+    background: #050505 !important;
     border-radius: 14px !important;
     border: 1px solid rgba(242, 178, 51, 0.12) !important;
     overflow: hidden !important;
@@ -197,7 +197,7 @@ div.stButton button {
 }
 
 div[role="radiogroup"] > label {
-    background: #132238 !important;
+    background: #111111 !important;
     border-radius: 10px !important;
     padding: 8px 10px !important;
     margin-bottom: 6px !important;
@@ -205,7 +205,7 @@ div[role="radiogroup"] > label {
 }
 
 hr {
-    border: 1px solid rgba(120, 150, 190, 0.18) !important;
+    border: 1px solid rgba(242, 178, 51, 0.18) !important;
 }
 
 @media (max-width: 950px) {
@@ -566,8 +566,8 @@ def generate_executive_summary(kpis):
 # VISUELS
 # =========================================================
 def draw_availability_gauge(value):
-    fig, ax = plt.subplots(figsize=(6.2, 3.2), facecolor="#08101f")
-    ax.set_facecolor("#08101f")
+    fig, ax = plt.subplots(figsize=(6.2, 3.2), facecolor="#000000")
+    ax.set_facecolor("#000000")
     ax.set_aspect("equal")
     ax.axis("off")
 
@@ -598,8 +598,8 @@ def draw_availability_gauge(value):
 
 
 def draw_maintenance_columns(rep_df, total_h):
-    fig, ax = plt.subplots(figsize=(8.2, 4.2), facecolor="#08101f")
-    ax.set_facecolor("#08101f")
+    fig, ax = plt.subplots(figsize=(8.2, 4.2), facecolor="#000000")
+    ax.set_facecolor("#000000")
     ax.axis("off")
 
     categories = ["Mécanique", "Electrique", "Instrumentation", "Automatique"]
@@ -636,9 +636,9 @@ def make_dark_bar_plot(df, x_col, y_col, title, xlabel="", ylabel="", rotation=3
     if top_n is not None:
         plot_df = plot_df.head(top_n)
 
-    fig, ax = plt.subplots(figsize=(10, 4.5), facecolor="#08101f")
-    fig.patch.set_facecolor("#08101f")
-    ax.set_facecolor("#08101f")
+    fig, ax = plt.subplots(figsize=(10, 4.5), facecolor="#000000")
+    fig.patch.set_facecolor("#000000")
+    ax.set_facecolor("#000000")
 
     if plot_df.empty:
         ax.text(0.5, 0.5, "Aucune donnée disponible", ha="center", va="center", color="white")
@@ -661,9 +661,9 @@ def make_dark_bar_plot(df, x_col, y_col, title, xlabel="", ylabel="", rotation=3
 
 
 def make_dark_pie_plot(df, label_col, value_col, title):
-    fig, ax = plt.subplots(figsize=(6.5, 4.5), facecolor="#08101f")
-    fig.patch.set_facecolor("#08101f")
-    ax.set_facecolor("#08101f")
+    fig, ax = plt.subplots(figsize=(6.5, 4.5), facecolor="#000000")
+    fig.patch.set_facecolor("#000000")
+    ax.set_facecolor("#000000")
 
     plot_df = df[df[value_col] > 0].copy()
 
@@ -1144,9 +1144,9 @@ elif page == "Analyses complémentaires":
     st.subheader("Pareto par TAG | Equipement")
 
     pareto = kpis["pareto_tag"].head(12).copy()
-    fig2, ax1 = plt.subplots(figsize=(12, 5), facecolor="#08101f")
-    fig2.patch.set_facecolor("#08101f")
-    ax1.set_facecolor("#08101f")
+    fig2, ax1 = plt.subplots(figsize=(12, 5), facecolor="#000000")
+    fig2.patch.set_facecolor("#000000")
+    ax1.set_facecolor("#000000")
 
     if not pareto.empty:
         ax1.bar(pareto["TAG_Equipement"], pareto["Duree_h"], color="#f2b233")
@@ -1168,9 +1168,9 @@ elif page == "Analyses complémentaires":
 
     st.subheader("Évolution journalière")
     if not kpis["journalier"].empty:
-        fig, ax = plt.subplots(figsize=(10, 4.2), facecolor="#08101f")
-        fig.patch.set_facecolor("#08101f")
-        ax.set_facecolor("#08101f")
+        fig, ax = plt.subplots(figsize=(10, 4.2), facecolor="#000000")
+        fig.patch.set_facecolor("#000000")
+        ax.set_facecolor("#000000")
         ax.plot(kpis["journalier"]["Jour"], kpis["journalier"]["Duree_h"], marker="o", linewidth=2, color="#f2b233")
         ax.fill_between(kpis["journalier"]["Jour"], kpis["journalier"]["Duree_h"], alpha=0.16, color="#f2b233")
         ax.set_xlabel("Jour", color="white")
