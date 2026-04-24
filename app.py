@@ -981,32 +981,44 @@ def generate_pdf_report(kpis, params):
 # =========================================================
 # HEADER PROFESSIONNEL
 # =========================================================
+# =========================================================
+# HEADER PROFESSIONNEL
+# =========================================================
+import base64
+
 logo_html = ""
+
 if LOGO_PATH.exists():
-    import base64
     with open(LOGO_PATH, "rb") as img_file:
         encoded_logo = base64.b64encode(img_file.read()).decode()
-    logo_html = f'<img class="header-logo" src="data:image/png;base64,{encoded_logo}">'
 
-st.markdown(f"""
-<div class="top-header">
-    <div class="header-content">
-        <div class="header-left">
-            {logo_html}
-            <div class="header-title-block">
-                <div class="header-title">Tableau de bord des arrêts</div>
-                <div class="header-subtitle">Plateforme KPI maintenance - Groupe Managem</div>
+    logo_html = f"""
+    <img 
+        src="data:image/png;base64,{encoded_logo}" 
+        style="width:260px; height:auto; object-fit:contain;"
+    >
+    """
+
+st.markdown(
+    f"""
+    <div class="top-header">
+        <div class="header-content">
+            <div class="header-left">
+                {logo_html}
+                <div class="header-title-block">
+                    <div class="header-title">Tableau de bord des arrêts</div>
+                    <div class="header-subtitle">Plateforme KPI maintenance - Groupe Managem</div>
+                </div>
+            </div>
+            <div class="header-site">
+                <div class="header-site-label">Site industriel</div>
+                <div class="header-site-value">SITE TIZERT</div>
             </div>
         </div>
-        <div class="header-site">
-            <div class="header-site-label">Site industriel</div>
-            <div class="header-site-value">SITE TIZERT</div>
-        </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
-
-
+    """,
+    unsafe_allow_html=True
+)
 # =========================================================
 # SIDEBAR
 # =========================================================
