@@ -922,11 +922,15 @@ def generate_pdf_report(kpis, params, alerts):
         fig.patch.set_facecolor("white")
         plt.axis("off")
 
-        if LOGO_PATH.exists():
-            logo_img = plt.imread(LOGO_PATH)
-            ax_logo = fig.add_axes([0.34, 0.67, 0.32, 0.20])
-            ax_logo.imshow(logo_img)
-            ax_logo.axis("off")
+     # Logo désactivé dans le PDF pour éviter l'erreur de lecture image sur Streamlit Cloud
+plt.text(
+    0.5, 0.72,
+    "MANAGEM",
+    ha="center",
+    fontsize=28,
+    fontweight="bold",
+    color="#d99721"
+)
 
         plt.text(
             0.5, 0.55,
