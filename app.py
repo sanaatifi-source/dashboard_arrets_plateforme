@@ -1,11 +1,13 @@
 import io
 from pathlib import Path
 import math
+from datetime import datetime
 
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 from matplotlib.patches import Wedge, Circle, Rectangle
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 st.set_page_config(
@@ -20,13 +22,11 @@ st.set_page_config(
 # =========================================================
 st.markdown("""
 <style>
-/* Fond global */
 .stApp {
     background: linear-gradient(180deg, #08101f 0%, #0b1326 100%) !important;
     color: #e5eefc !important;
 }
 
-/* Masquer le haut Streamlit blanc */
 header[data-testid="stHeader"] {
     display: none !important;
 }
@@ -39,13 +39,11 @@ div[data-testid="stDecoration"] {
     display: none !important;
 }
 
-/* Sidebar */
 section[data-testid="stSidebar"] {
     background: linear-gradient(180deg, #0d1728 0%, #101b2f 100%) !important;
     border-right: 1px solid rgba(29, 212, 223, 0.12);
 }
 
-/* Texte global */
 html, body, [class*="css"], [data-testid="stAppViewContainer"] {
     color: #e5eefc !important;
 }
@@ -56,7 +54,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h3 {
-    min-height: 64px;
+    min-height: 54px;
     line-height: 1.2 !important;
     margin-bottom: 0.6rem !important;
 }
@@ -65,14 +63,12 @@ p, label, span, div {
     color: #dbe7f5 !important;
 }
 
-/* Conteneur principal */
 .block-container {
     padding-top: 0.6rem !important;
     padding-bottom: 1.5rem !important;
     max-width: 1500px;
 }
 
-/* Logo */
 .logo-box {
     display: flex;
     justify-content: center;
@@ -81,7 +77,6 @@ p, label, span, div {
     margin-bottom: 2px;
 }
 
-/* Cards personnalisées */
 .custom-card {
     background: linear-gradient(180deg, #112036 0%, #0e1a2d 100%);
     border: 1px solid rgba(29, 212, 223, 0.14);
@@ -111,7 +106,6 @@ p, label, span, div {
     margin-top: 6px;
 }
 
-/* Bloc titre dashboard */
 .hero-box {
     background: linear-gradient(135deg, rgba(29,212,223,0.08) 0%, rgba(74,168,255,0.05) 100%);
     border: 1px solid rgba(29, 212, 223, 0.16);
@@ -120,7 +114,6 @@ p, label, span, div {
     margin-bottom: 18px;
 }
 
-/* Metrics Streamlit */
 div[data-testid="stMetric"] {
     background: linear-gradient(180deg, #112036 0%, #0e1a2d 100%) !important;
     border: 1px solid rgba(29, 212, 223, 0.14) !important;
@@ -129,18 +122,12 @@ div[data-testid="stMetric"] {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18) !important;
 }
 
-div[data-testid="metric-container"] {
-    background: transparent !important;
-}
-
-/* Inputs */
 input, textarea {
     background-color: #132238 !important;
     color: #ffffff !important;
     border-radius: 10px !important;
 }
 
-/* Selectbox / multiselect */
 div[data-baseweb="select"] > div {
     background-color: #132238 !important;
     color: #ffffff !important;
@@ -148,7 +135,6 @@ div[data-baseweb="select"] > div {
     border: 1px solid rgba(29, 212, 223, 0.12) !important;
 }
 
-/* File uploader */
 section[data-testid="stFileUploader"] {
     background: #132238 !important;
     border: 1px solid rgba(29, 212, 223, 0.14) !important;
@@ -156,7 +142,6 @@ section[data-testid="stFileUploader"] {
     padding: 10px !important;
 }
 
-/* Dataframe */
 div[data-testid="stDataFrame"] {
     background: #0f1c2f !important;
     border-radius: 14px !important;
@@ -164,7 +149,6 @@ div[data-testid="stDataFrame"] {
     overflow: hidden !important;
 }
 
-/* Tables */
 table {
     background-color: #132238 !important;
     color: #ffffff !important;
@@ -180,7 +164,6 @@ tbody tr td {
     color: #ffffff !important;
 }
 
-/* Buttons */
 button {
     border-radius: 10px !important;
 }
@@ -194,7 +177,6 @@ div.stButton button {
     box-shadow: 0 6px 18px rgba(29, 212, 223, 0.18);
 }
 
-/* Radio */
 div[role="radiogroup"] > label {
     background: #132238 !important;
     border-radius: 10px !important;
@@ -203,12 +185,10 @@ div[role="radiogroup"] > label {
     border: 1px solid rgba(29, 212, 223, 0.08);
 }
 
-/* Ligne de séparation */
 hr {
     border: 1px solid rgba(120, 150, 190, 0.18) !important;
 }
 
-/* Petites infos */
 .small-note {
     color: #8ea8c7 !important;
     font-size: 0.86rem;
@@ -225,6 +205,14 @@ hr {
     font-weight: 700;
     margin-bottom: 10px;
 }
+
+.executive-box {
+    background: linear-gradient(180deg, #10213a 0%, #0d192d 100%);
+    border: 1px solid rgba(29, 212, 223, 0.16);
+    border-radius: 16px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -233,6 +221,7 @@ hr {
 # =========================================================
 LOGO_PATH = Path("logoo.png")
 
+
 # =========================================================
 # OUTILS
 # =========================================================
@@ -240,6 +229,10 @@ def normalize_text(value):
     if pd.isna(value):
         return ""
     return str(value).strip()
+
+
+def lower_text(value):
+    return normalize_text(value).lower()
 
 
 def duration_to_hours(value):
@@ -304,8 +297,16 @@ def render_info_card(title, value, subtitle=""):
     )
 
 
+def format_pct(value):
+    return f"{value:.2f} %"
+
+
+def format_h(value):
+    return f"{value:.2f} h"
+
+
 # =========================================================
-# CHARGEMENT DE LA BASE BRUTE
+# CHARGEMENT DES DONNÉES
 # =========================================================
 def load_raw_data(uploaded_file, sheet_name=None):
     suffix = Path(uploaded_file.name).suffix.lower()
@@ -319,22 +320,30 @@ def load_raw_data(uploaded_file, sheet_name=None):
 
     df = clean_columns(df)
 
-    expected = [
+    required_columns = [
         "Date",
         "Zone",
-        "Famille",
         "TAG",
         "Equipement",
         "Imputation arrêt",
         "Durée (H)",
         "Description Arrêt",
         "Type de panne",
-        "Causes majeures",
         "Usine en arret/marche"
     ]
 
-    missing = [c for c in expected if c not in df.columns]
-    return df, missing
+    optional_columns = [
+        "Famille",
+        "Causes majeures"
+    ]
+
+    missing_required = [c for c in required_columns if c not in df.columns]
+
+    for col in optional_columns:
+        if col not in df.columns:
+            df[col] = ""
+
+    return df, missing_required
 
 
 def prepare_data(df):
@@ -343,13 +352,14 @@ def prepare_data(df):
     df = df.dropna(how="all")
 
     if "Date" in df.columns:
-        df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+        df["Date"] = pd.to_datetime(df["Date"], errors="coerce", dayfirst=True)
 
     text_cols = [
         "Zone", "Famille", "TAG", "Equipement",
         "Imputation arrêt", "Description Arrêt",
         "Type de panne", "Causes majeures", "Usine en arret/marche"
     ]
+
     for col in text_cols:
         if col in df.columns:
             df[col] = df[col].apply(normalize_text)
@@ -363,28 +373,28 @@ def prepare_data(df):
 
 
 # =========================================================
-# RÈGLES DE CLASSIFICATION
+# CLASSIFICATION
 # =========================================================
 def classify_planned(row):
-    imp = normalize_text(row.get("Imputation arrêt", "")).lower()
+    imp = lower_text(row.get("Imputation arrêt", ""))
     return "plan" in imp
 
 
 def classify_unplanned_stop(row):
-    imp = normalize_text(row.get("Imputation arrêt", "")).lower()
-    usine = normalize_text(row.get("Usine en arret/marche", "")).lower()
-    return ("plan" not in imp) and usine in ["oui", "o", "yes", "y"]
+    imp = lower_text(row.get("Imputation arrêt", ""))
+    usine = lower_text(row.get("Usine en arret/marche", ""))
+    return ("plan" not in imp) and usine in ["oui", "o", "yes", "y", "1"]
 
 
 def classify_maintenance(row):
-    imp = normalize_text(row.get("Imputation arrêt", "")).lower()
-    usine = normalize_text(row.get("Usine en arret/marche", "")).lower()
+    imp = lower_text(row.get("Imputation arrêt", ""))
+    usine = lower_text(row.get("Usine en arret/marche", ""))
     labels = ["mécanique", "mecanique", "electrique", "électrique", "instrumentation", "automatique"]
-    return any(lbl in imp for lbl in labels) and usine in ["oui", "o", "yes", "y"]
+    return any(lbl in imp for lbl in labels) and usine in ["oui", "o", "yes", "y", "1"]
 
 
 def maintenance_category(text):
-    t = normalize_text(text).lower()
+    t = lower_text(text)
     if "mécanique" in t or "mecanique" in t:
         return "Mécanique"
     if "electrique" in t or "électrique" in t:
@@ -410,17 +420,17 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
     arrets_planifies = round(data.loc[data["is_planned"], "Duree_h"].sum(), 2)
     temps_arrets_np = round(data.loc[data["is_unplanned_stop"], "Duree_h"].sum(), 2)
 
-    temps_requis = round(temps_ouverture - arrets_planifies, 2)
-    temps_fonctionnement = round(temps_requis - temps_arrets_np, 2)
+    temps_requis = round(max(temps_ouverture - arrets_planifies, 0), 2)
+    temps_fonctionnement = round(max(temps_requis - temps_arrets_np, 0), 2)
 
     if cadence_theorique > 0:
         temps_theorique_production = tonnage_realise / cadence_theorique
-        temps_ecart_cadence = round(temps_fonctionnement - temps_theorique_production, 2)
+        temps_ecart_cadence = round(max(temps_fonctionnement - temps_theorique_production, 0), 2)
     else:
         temps_theorique_production = 0.0
         temps_ecart_cadence = 0.0
 
-    temps_net = round(temps_fonctionnement - temps_ecart_cadence, 2)
+    temps_net = round(max(temps_fonctionnement - temps_ecart_cadence, 0), 2)
 
     maintenance_df = data[data["is_maintenance"]].copy()
 
@@ -474,7 +484,6 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
         .sum()
         .sort_values(ascending=False)
         .reset_index()
-        if "Zone" in data.columns else pd.DataFrame(columns=["Zone", "Duree_h"])
     )
 
     top_equipements = (
@@ -483,7 +492,6 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
         .sort_values(ascending=False)
         .head(10)
         .reset_index()
-        if "Equipement" in data.columns else pd.DataFrame(columns=["Equipement", "Duree_h"])
     )
 
     pareto_tag = (
@@ -491,23 +499,28 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
         .sum()
         .sort_values(ascending=False)
         .reset_index()
-        if "TAG" in data.columns and "Equipement" in data.columns
-        else pd.DataFrame(columns=["TAG", "Equipement", "Duree_h"])
     )
 
     if not pareto_tag.empty and pareto_tag["Duree_h"].sum() > 0:
         pareto_tag["TAG_Equipement"] = pareto_tag["TAG"].astype(str) + " | " + pareto_tag["Equipement"].astype(str)
         pareto_tag["Cum_%"] = pareto_tag["Duree_h"].cumsum() / pareto_tag["Duree_h"].sum() * 100
+    else:
+        pareto_tag["TAG_Equipement"] = ""
+        pareto_tag["Cum_%"] = 0.0
 
     if "Date" in data.columns:
         temp = data.copy()
-        temp["Jour"] = temp["Date"].dt.date
-        journalier = (
-            temp.groupby("Jour")["Duree_h"]
-            .sum()
-            .reset_index()
-            .sort_values("Jour")
-        )
+        temp = temp.dropna(subset=["Date"])
+        if not temp.empty:
+            temp["Jour"] = temp["Date"].dt.date
+            journalier = (
+                temp.groupby("Jour")["Duree_h"]
+                .sum()
+                .reset_index()
+                .sort_values("Jour")
+            )
+        else:
+            journalier = pd.DataFrame(columns=["Jour", "Duree_h"])
     else:
         journalier = pd.DataFrame(columns=["Jour", "Duree_h"])
 
@@ -516,15 +529,15 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
             "Année",
             "Mois",
             "Temps d'ouverture",
+            "Arrêts planifiés (hr)",
             "Temps Requis (hr)",
+            "Temps arrêts NP",
             "Temps de fonctionnement",
             "Temps ecart cadence",
             "Temps Net",
             "Cadence théorique",
-            "Cadence de fonctionnement",
+            "Temps théorique production",
             "Tonnage réalisé",
-            "Arrêts planifiés (hr)",
-            "Temps arrêts NP",
             "Somme des Arrêts maintenance",
             "Somme des durées maintenance",
             "Taux de qualité (%)"
@@ -533,15 +546,15 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
             annee,
             mois,
             round(temps_ouverture, 2),
+            round(arrets_planifies, 2),
             round(temps_requis, 2),
+            round(temps_arrets_np, 2),
             round(temps_fonctionnement, 2),
             round(temps_ecart_cadence, 2),
             round(temps_net, 2),
             round(cadence_theorique, 2),
             round(temps_theorique_production, 2),
             round(tonnage_realise, 2),
-            round(arrets_planifies, 2),
-            round(temps_arrets_np, 2),
             somme_arrets_maintenance,
             round(somme_durees_maintenance, 2),
             round(taux_qualite * 100, 2)
@@ -554,6 +567,11 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
         "disponibilite": disponibilite,
         "mtbf": mtbf,
         "mttr": mttr,
+        "temps_requis": temps_requis,
+        "temps_fonctionnement": temps_fonctionnement,
+        "temps_net": temps_net,
+        "arrets_planifies": arrets_planifies,
+        "temps_arrets_np": temps_arrets_np,
         "maintenance_total_h": somme_durees_maintenance,
         "maintenance_total_txt": to_hhmmss(somme_durees_maintenance),
         "maintenance_total_n": somme_arrets_maintenance,
@@ -567,7 +585,47 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
 
 
 # =========================================================
-# VISUELS
+# ANALYSE AUTOMATIQUE
+# =========================================================
+def generate_executive_summary(kpis):
+    trs = kpis["trs"]
+    dispo = kpis["disponibilite"]
+    mttr = kpis["mttr"]
+    mtbf = kpis["mtbf"]
+    maint = kpis["maintenance_total_h"]
+
+    messages = []
+
+    if trs >= 85:
+        messages.append("Le TRS est à un très bon niveau, ce qui indique une performance globale satisfaisante.")
+    elif trs >= 70:
+        messages.append("Le TRS est acceptable, mais une marge d’amélioration reste possible sur les arrêts et la cadence.")
+    else:
+        messages.append("Le TRS est faible. Une analyse prioritaire des arrêts majeurs et des pertes de cadence est recommandée.")
+
+    if dispo >= 90:
+        messages.append("La disponibilité maintenance est très bonne.")
+    elif dispo >= 75:
+        messages.append("La disponibilité maintenance est moyenne. Les arrêts maintenance doivent être suivis de près.")
+    else:
+        messages.append("La disponibilité maintenance est critique. Les arrêts maintenance impactent fortement le temps requis.")
+
+    if mttr > 0 and mttr > 4:
+        messages.append("Le MTTR est élevé. Il faut analyser les causes de réparation longue et améliorer la réactivité maintenance.")
+    elif mttr > 0:
+        messages.append("Le MTTR reste maîtrisé, mais doit être suivi dans les prochains mois.")
+
+    if mtbf > 0 and mtbf < 20:
+        messages.append("Le MTBF est faible. La fréquence des pannes est élevée et nécessite une action de fiabilisation.")
+
+    if maint > 0:
+        messages.append("La priorité d’amélioration doit être orientée vers les équipements les plus pénalisants du Pareto.")
+
+    return messages
+
+
+# =========================================================
+# VISUELS STREAMLIT
 # =========================================================
 def draw_availability_gauge(value):
     fig, ax = plt.subplots(figsize=(6.2, 3.2), facecolor="#08101f")
@@ -671,6 +729,11 @@ def make_dark_bar_plot(df, x_col, y_col, title, xlabel=None, ylabel=None, rotati
     fig.patch.set_facecolor("#08101f")
     ax.set_facecolor("#08101f")
 
+    if plot_df.empty:
+        ax.text(0.5, 0.5, "Aucune donnée disponible", ha="center", va="center", color="white")
+        ax.axis("off")
+        return fig
+
     ax.bar(plot_df[x_col].astype(str), plot_df[y_col], color="#1dd4df")
     ax.set_title(title, color="white", fontsize=13, pad=12, fontweight="bold")
     ax.set_xlabel(xlabel if xlabel else "", color="#dbe7f5")
@@ -686,16 +749,203 @@ def make_dark_bar_plot(df, x_col, y_col, title, xlabel=None, ylabel=None, rotati
     return fig
 
 
-def export_excel(kpis):
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        kpis["bloc_kpi"].to_excel(writer, index=False, sheet_name="Bloc_KPI")
-        kpis["rep_maintenance_final"].to_excel(writer, index=False, sheet_name="Maintenance")
-        kpis["rep_zone"].to_excel(writer, index=False, sheet_name="Zone")
-        kpis["top_equipements"].to_excel(writer, index=False, sheet_name="Top_equipements")
-        kpis["pareto_tag"].to_excel(writer, index=False, sheet_name="Pareto_TAG")
-        kpis["data"].to_excel(writer, index=False, sheet_name="Data")
-    return output.getvalue()
+# =========================================================
+# GRAPHIQUES POUR PDF
+# =========================================================
+def make_pdf_bar_plot(df, x_col, y_col, title, top_n=10):
+    fig, ax = plt.subplots(figsize=(11, 6))
+    plot_df = df.copy().head(top_n)
+
+    if plot_df.empty:
+        ax.text(0.5, 0.5, "Aucune donnée disponible", ha="center", va="center")
+        ax.axis("off")
+        return fig
+
+    ax.bar(plot_df[x_col].astype(str), plot_df[y_col])
+    ax.set_title(title, fontsize=14, fontweight="bold")
+    ax.set_ylabel("Durée (h)")
+    ax.tick_params(axis="x", rotation=35)
+    ax.grid(axis="y", alpha=0.25)
+    plt.tight_layout()
+    return fig
+
+
+def make_pdf_pareto_plot(pareto_df):
+    fig, ax1 = plt.subplots(figsize=(11, 6))
+    pareto = pareto_df.head(12).copy()
+
+    if pareto.empty:
+        ax1.text(0.5, 0.5, "Aucune donnée Pareto disponible", ha="center", va="center")
+        ax1.axis("off")
+        return fig
+
+    ax1.bar(pareto["TAG_Equipement"], pareto["Duree_h"])
+    ax1.set_ylabel("Durée (h)")
+    ax1.tick_params(axis="x", rotation=40)
+    ax1.set_title("Pareto par TAG | Equipement", fontsize=14, fontweight="bold")
+    ax1.grid(axis="y", alpha=0.25)
+
+    ax2 = ax1.twinx()
+    ax2.plot(pareto["TAG_Equipement"], pareto["Cum_%"], marker="o")
+    ax2.set_ylabel("Cumul (%)")
+    ax2.set_ylim(0, 110)
+
+    plt.tight_layout()
+    return fig
+
+
+def make_pdf_daily_plot(journalier):
+    fig, ax = plt.subplots(figsize=(11, 6))
+
+    if journalier.empty:
+        ax.text(0.5, 0.5, "Aucune évolution journalière disponible", ha="center", va="center")
+        ax.axis("off")
+        return fig
+
+    ax.plot(journalier["Jour"], journalier["Duree_h"], marker="o", linewidth=2)
+    ax.set_title("Evolution journalière des arrêts", fontsize=14, fontweight="bold")
+    ax.set_xlabel("Jour")
+    ax.set_ylabel("Durée (h)")
+    ax.tick_params(axis="x", rotation=35)
+    ax.grid(alpha=0.25)
+
+    plt.tight_layout()
+    return fig
+
+
+# =========================================================
+# PDF PROFESSIONNEL
+# =========================================================
+def add_pdf_text_page(pdf, title, lines):
+    fig = plt.figure(figsize=(11.69, 8.27))
+    fig.patch.set_facecolor("white")
+
+    plt.axis("off")
+    plt.text(0.05, 0.92, title, fontsize=22, fontweight="bold", color="#0b1326")
+
+    y = 0.82
+    for line in lines:
+        plt.text(0.07, y, line, fontsize=12, color="#111827", wrap=True)
+        y -= 0.055
+
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
+def add_pdf_table_page(pdf, title, df, max_rows=18):
+    fig, ax = plt.subplots(figsize=(11.69, 8.27))
+    ax.axis("off")
+
+    ax.text(0.03, 0.96, title, fontsize=18, fontweight="bold", transform=ax.transAxes)
+
+    table_df = df.head(max_rows).copy()
+    table = ax.table(
+        cellText=table_df.values,
+        colLabels=table_df.columns,
+        loc="center",
+        cellLoc="center"
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(8.5)
+    table.scale(1, 1.4)
+
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:
+            cell.set_text_props(weight="bold", color="white")
+            cell.set_facecolor("#132238")
+        else:
+            cell.set_facecolor("#f4f7fb")
+
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
+def generate_pdf_report(kpis, params):
+    buffer = io.BytesIO()
+
+    with PdfPages(buffer) as pdf:
+        # Page 1 : couverture
+        cover_lines = [
+            "Rapport automatique généré par la plateforme Dashboard Arrêts - Managem",
+            f"Période analysée : {params['mois']} {params['annee']}",
+            f"Date de génération : {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            "",
+            "Objectif du rapport :",
+            "Présenter une synthèse claire des KPI maintenance, des arrêts, des équipements pénalisants",
+            "et des axes prioritaires d'amélioration.",
+            "",
+            "KPI principaux :",
+            f"TRS : {format_pct(kpis['trs'])}",
+            f"Disponibilité maintenance : {format_pct(kpis['disponibilite'])}",
+            f"MTBF : {format_h(kpis['mtbf'])}",
+            f"MTTR : {format_h(kpis['mttr'])}",
+        ]
+        add_pdf_text_page(pdf, "Rapport KPI des arrêts - Managem", cover_lines)
+
+        # Page 2 : résumé exécutif
+        summary = generate_executive_summary(kpis)
+        lines = []
+        for i, msg in enumerate(summary, 1):
+            lines.append(f"{i}. {msg}")
+
+        lines.extend([
+            "",
+            "Synthèse chiffrée :",
+            f"Temps requis : {format_h(kpis['temps_requis'])}",
+            f"Temps de fonctionnement : {format_h(kpis['temps_fonctionnement'])}",
+            f"Temps net : {format_h(kpis['temps_net'])}",
+            f"Arrêts planifiés : {format_h(kpis['arrets_planifies'])}",
+            f"Temps arrêts non planifiés : {format_h(kpis['temps_arrets_np'])}",
+            f"Maintenance totale : {format_h(kpis['maintenance_total_h'])}",
+            f"Nombre d'arrêts maintenance : {kpis['maintenance_total_n']}",
+        ])
+        add_pdf_text_page(pdf, "Résumé exécutif", lines)
+
+        # Page 3 : bloc KPI
+        add_pdf_table_page(pdf, "Bloc KPI détaillé", kpis["bloc_kpi"], max_rows=20)
+
+        # Page 4 : maintenance
+        add_pdf_table_page(pdf, "Synthèse maintenance", kpis["rep_maintenance_final"], max_rows=10)
+
+        # Page 5 : zones
+        fig_zone = make_pdf_bar_plot(kpis["rep_zone"], "Zone", "Duree_h", "Répartition des arrêts par zone", top_n=12)
+        pdf.savefig(fig_zone, bbox_inches="tight")
+        plt.close(fig_zone)
+
+        # Page 6 : top équipements
+        fig_eq = make_pdf_bar_plot(kpis["top_equipements"], "Equipement", "Duree_h", "Top équipements pénalisants", top_n=10)
+        pdf.savefig(fig_eq, bbox_inches="tight")
+        plt.close(fig_eq)
+
+        # Page 7 : pareto
+        fig_pareto = make_pdf_pareto_plot(kpis["pareto_tag"])
+        pdf.savefig(fig_pareto, bbox_inches="tight")
+        plt.close(fig_pareto)
+
+        # Page 8 : évolution journalière
+        fig_daily = make_pdf_daily_plot(kpis["journalier"])
+        pdf.savefig(fig_daily, bbox_inches="tight")
+        plt.close(fig_daily)
+
+        # Page 9 : conclusion
+        conclusion_lines = [
+            "Conclusion automatique :",
+            "",
+            "Ce rapport met en évidence les KPI principaux de performance et de maintenance.",
+            "L'analyse Pareto permet d'identifier les équipements qui contribuent le plus aux pertes.",
+            "La priorité d'amélioration doit être donnée aux équipements ayant les durées d'arrêt les plus élevées.",
+            "",
+            "Recommandations générales :",
+            "1. Suivre mensuellement l'évolution du TRS, MTBF et MTTR.",
+            "2. Prioriser les équipements du Pareto pour les actions de fiabilisation.",
+            "3. Analyser les arrêts longs et récurrents.",
+            "4. Mettre en place un plan d'action maintenance ciblé par zone et par équipement.",
+            "5. Utiliser cette plateforme comme outil de suivi mensuel standardisé."
+        ]
+        add_pdf_text_page(pdf, "Conclusion et recommandations", conclusion_lines)
+
+    buffer.seek(0)
+    return buffer.getvalue()
 
 
 # =========================================================
@@ -716,6 +966,7 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 # =========================================================
 # SIDEBAR
@@ -741,33 +992,53 @@ if uploaded_file is not None and Path(uploaded_file.name).suffix.lower() != ".cs
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Paramètres KPI")
+
 annee = st.sidebar.number_input("Année", min_value=2000, max_value=2100, value=2026, step=1)
-mois = st.sidebar.selectbox("Mois", [
-    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-], index=1)
+
+mois = st.sidebar.selectbox(
+    "Mois",
+    [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ],
+    index=1
+)
+
 temps_ouverture = st.sidebar.number_input("Temps d'ouverture (h)", min_value=0.0, value=672.0, step=1.0)
 cadence_theorique = st.sidebar.number_input("Cadence théorique", min_value=0.0, value=450.0, step=1.0)
 tonnage_realise = st.sidebar.number_input("Tonnage réalisé", min_value=0.0, value=214596.38, step=1.0)
 taux_qualite_pct = st.sidebar.number_input("Taux de qualité (%)", min_value=0.0, max_value=200.0, value=102.0, step=0.1)
 taux_qualite = taux_qualite_pct / 100
 
+
+# =========================================================
+# SI PAS DE FICHIER
+# =========================================================
 if uploaded_file is None:
-    st.info("Importe le fichier brut des arrêts.")
+    st.info("Importez le fichier brut des arrêts depuis la barre latérale pour générer le dashboard.")
+    st.markdown("""
+    <div class="executive-box">
+        <h3>Objectif de la plateforme</h3>
+        <p>
+        Cette application permet de transformer automatiquement une base brute mensuelle des arrêts
+        en tableau de bord KPI maintenance avec analyses, graphiques et rapport PDF.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     st.stop()
 
+
+# =========================================================
+# LECTURE ET PRÉPARATION
+# =========================================================
 raw_df, missing_cols = load_raw_data(uploaded_file, sheet_name)
 
 if missing_cols:
-    st.error("Colonnes manquantes dans le fichier importé.")
-    st.write("Colonnes obligatoires :")
-    st.write([
-        "Date", "Zone", "Famille", "TAG", "Equipement", "Imputation arrêt",
-        "Durée (H)", "Description Arrêt", "Type de panne", "Causes majeures",
-        "Usine en arret/marche"
-    ])
-    st.write("Colonnes manquantes détectées :")
+    st.error("Colonnes obligatoires manquantes dans le fichier importé.")
+    st.write("Colonnes manquantes :")
     st.write(missing_cols)
+    st.write("Colonnes détectées :")
+    st.write(list(raw_df.columns))
     st.stop()
 
 df = prepare_data(raw_df)
@@ -784,12 +1055,16 @@ selected_imputations = st.sidebar.multiselect("Filtrer Imputation arrêt", imput
 selected_tags = st.sidebar.multiselect("Filtrer TAG", tags, default=tags)
 
 df_filtered = df.copy()
+
 if selected_zones:
     df_filtered = df_filtered[df_filtered["Zone"].isin(selected_zones)]
+
 if selected_imputations:
     df_filtered = df_filtered[df_filtered["Imputation arrêt"].isin(selected_imputations)]
+
 if selected_tags:
     df_filtered = df_filtered[df_filtered["TAG"].isin(selected_tags)]
+
 
 kpis = compute_kpis(
     df_filtered,
@@ -801,21 +1076,41 @@ kpis = compute_kpis(
     taux_qualite=taux_qualite
 )
 
-excel_bytes = export_excel(kpis)
+params = {
+    "annee": annee,
+    "mois": mois,
+    "temps_ouverture": temps_ouverture,
+    "cadence_theorique": cadence_theorique,
+    "tonnage_realise": tonnage_realise,
+    "taux_qualite": taux_qualite
+}
+
 
 # =========================================================
-# PAGE 1
+# PAGE 1 : DASHBOARD PRINCIPAL
 # =========================================================
 if page == "Dashboard principal":
     st.markdown('<div class="section-chip">Vue générale</div>', unsafe_allow_html=True)
 
+    summary_lines = generate_executive_summary(kpis)
+
+    st.markdown('<div class="executive-box">', unsafe_allow_html=True)
+    st.subheader("Résumé exécutif automatique")
+    for msg in summary_lines:
+        st.write(f"- {msg}")
+    st.markdown('</div>', unsafe_allow_html=True)
+
     m1, m2, m3, m4 = st.columns(4)
+
     with m1:
         render_info_card("TRS", f"{kpis['trs']} %", "Taux de rendement synthétique")
+
     with m2:
         render_info_card("Disponibilité", f"{kpis['disponibilite']} %", "Disponibilité maintenance")
+
     with m3:
         render_info_card("MTBF", f"{kpis['mtbf']} h", "Temps moyen entre pannes")
+
     with m4:
         render_info_card("MTTR", f"{kpis['mttr']} h", "Temps moyen de réparation")
 
@@ -870,18 +1165,20 @@ if page == "Dashboard principal":
         st.dataframe(
             synthese,
             use_container_width=True,
-            height=430
+            height=330
         )
 
+        pdf_bytes = generate_pdf_report(kpis, params)
+
         st.download_button(
-            "Télécharger le rapport Excel",
-            data=excel_bytes,
-            file_name="rapport_kpi_arrets.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            "Télécharger le rapport PDF",
+            data=pdf_bytes,
+            file_name=f"rapport_kpi_arrets_{mois}_{annee}.pdf",
+            mime="application/pdf"
         )
 
         st.markdown(
-            "<div class='small-note'>Export des KPI, maintenance, zones, top équipements, pareto TAG et données filtrées.</div>",
+            "<div class='small-note'>Le rapport PDF contient les KPI, analyses, graphiques, Pareto et recommandations.</div>",
             unsafe_allow_html=True
         )
 
@@ -902,8 +1199,9 @@ if page == "Dashboard principal":
         fig_g = draw_availability_gauge(kpis["disponibilite"])
         st.pyplot(fig_g, use_container_width=True)
 
+
 # =========================================================
-# PAGE 2
+# PAGE 2 : ANALYSES COMPLÉMENTAIRES
 # =========================================================
 elif page == "Analyses complémentaires":
     st.markdown('<div class="section-chip">Analyses avancées</div>', unsafe_allow_html=True)
@@ -973,7 +1271,7 @@ elif page == "Analyses complémentaires":
         st.pyplot(fig2, use_container_width=True)
         st.dataframe(pareto[["TAG", "Equipement", "Duree_h", "Cum_%"]], use_container_width=True, height=250)
     else:
-        st.info("Pas de données pareto exploitables.")
+        st.info("Pas de données Pareto exploitables.")
 
     st.subheader("Évolution journalière")
     if not kpis["journalier"].empty:
@@ -994,52 +1292,65 @@ elif page == "Analyses complémentaires":
     else:
         st.info("Pas de dates exploitables.")
 
+
 # =========================================================
-# PAGE 3
+# PAGE 3 : DONNÉES
 # =========================================================
 elif page == "Données":
     st.markdown('<div class="section-chip">Exploration des données</div>', unsafe_allow_html=True)
+
     st.subheader("Données filtrées")
     st.dataframe(df_filtered, use_container_width=True, height=520)
 
     csv_bytes = df_filtered.to_csv(index=False).encode("utf-8-sig")
     st.download_button(
-        "Télécharger les données filtrées (CSV)",
+        "Télécharger les données filtrées CSV",
         data=csv_bytes,
         file_name="donnees_filtrees.csv",
         mime="text/csv"
     )
 
     col_a, col_b, col_c = st.columns(3)
+
     with col_a:
         render_info_card("Lignes filtrées", f"{len(df_filtered)}", "Nombre de lignes après filtres")
+
     with col_b:
         render_info_card("Zones", f"{df_filtered['Zone'].nunique() if 'Zone' in df_filtered.columns else 0}", "Nombre de zones visibles")
+
     with col_c:
         render_info_card("Equipements", f"{df_filtered['Equipement'].nunique() if 'Equipement' in df_filtered.columns else 0}", "Nombre d'équipements visibles")
 
+
 # =========================================================
-# PAGE 4
+# PAGE 4 : AIDE
 # =========================================================
 elif page == "Aide":
     st.markdown('<div class="section-chip">Guide utilisateur</div>', unsafe_allow_html=True)
 
     st.subheader("Principe")
-    st.write("L'utilisateur importe seulement la base brute des arrêts. La plateforme calcule ensuite automatiquement le tableau de bord.")
+    st.write(
+        "L'utilisateur importe seulement la base brute des arrêts. "
+        "La plateforme calcule automatiquement les KPI, affiche les graphiques et génère un rapport PDF."
+    )
 
-    st.subheader("Colonnes attendues")
+    st.subheader("Colonnes obligatoires")
     st.write([
         "Date",
         "Zone",
-        "Famille",
         "TAG",
         "Equipement",
         "Imputation arrêt",
         "Durée (H)",
         "Description Arrêt",
         "Type de panne",
-        "Causes majeures",
         "Usine en arret/marche"
+    ])
+
+    st.subheader("Colonnes optionnelles")
+    st.write([
+        "Famille",
+        "Causes majeures"
     ])
 
     st.subheader("Formules KPI utilisées")
@@ -1051,3 +1362,9 @@ elif page == "Aide":
     st.write("Disponibilité = ((Temps Requis - Somme des durées maintenance) / Temps Requis) × 100")
     st.write("MTBF = (Temps Requis - Somme des durées maintenance) / Nombre d'arrêts maintenance")
     st.write("MTTR = Somme des durées maintenance / Nombre d'arrêts maintenance")
+
+    st.subheader("Rapport PDF")
+    st.write(
+        "Le rapport PDF contient une couverture, un résumé exécutif, les KPI, la synthèse maintenance, "
+        "les graphiques par zone, top équipements, Pareto TAG | Equipement, évolution journalière et recommandations."
+    )
