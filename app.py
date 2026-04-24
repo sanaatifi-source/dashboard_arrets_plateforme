@@ -38,7 +38,7 @@ div[data-testid="stDecoration"] {
 
 section[data-testid="stSidebar"] {
     background: linear-gradient(180deg, #0c172a 0%, #101d33 100%) !important;
-    border-right: 1px solid rgba(29, 212, 223, 0.14);
+    border-right: 1px solid rgba(242, 178, 51, 0.16);
 }
 
 html, body, [class*="css"], [data-testid="stAppViewContainer"] {
@@ -55,78 +55,60 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
     color: #e5eefc !important;
 }
 
-.header-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: linear-gradient(135deg, #08101f 0%, #10213a 55%, #0d1728 100%);
-    padding: 24px 34px;
-    border-radius: 24px;
-    border: 1px solid rgba(29, 212, 223, 0.18);
-    box-shadow: 0px 12px 32px rgba(0, 0, 0, 0.30);
-    margin-bottom: 26px;
+/* HEADER */
+.main-header {
+    background: linear-gradient(180deg, #07101f 0%, #0b1326 100%);
+    border: 1px solid rgba(242, 178, 51, 0.22);
+    border-radius: 28px;
+    padding: 34px 40px 38px 40px;
+    margin-bottom: 28px;
+    text-align: center;
+    box-shadow: 0px 14px 34px rgba(0, 0, 0, 0.32);
 }
 
-.header-left {
+.logo-center {
     display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 34px;
+    margin-bottom: 18px;
 }
 
-.header-logo {
-    width: 260px;
+.main-logo {
+    width: 480px;
+    max-width: 90%;
     height: auto;
-    border-radius: 16px;
     object-fit: contain;
-    box-shadow: 0px 0px 24px rgba(255, 180, 0, 0.18);
-}
-
-.header-title {
-    font-size: 3.05rem;
-    font-weight: 850;
-    line-height: 1.05;
-    color: #f3f8ff !important;
-}
-
-.header-subtitle {
-    font-size: 1.1rem;
-    color: #9eb8d6 !important;
-    margin-top: 12px;
-}
-
-.header-right {
-    text-align: right;
-    background: rgba(29, 212, 223, 0.08);
-    border: 1px solid rgba(29, 212, 223, 0.18);
     border-radius: 18px;
-    padding: 16px 22px;
-    min-width: 210px;
+    background: transparent;
 }
 
-.header-site-label {
-    font-size: 0.8rem;
-    letter-spacing: 0.08em;
-    color: #9eb8d6 !important;
-    text-transform: uppercase;
-    font-weight: 700;
-}
-
-.header-site-value {
-    font-size: 1.7rem;
+.header-title-center {
+    font-size: 3.1rem;
     font-weight: 850;
-    color: #1dd4df !important;
-    margin-top: 6px;
+    color: #f3f8ff !important;
+    line-height: 1.08;
+    margin-top: 4px;
 }
 
-.header-date {
-    font-size: 0.82rem;
-    color: #9eb8d6 !important;
-    margin-top: 8px;
+.header-subtitle-center {
+    font-size: 1.15rem;
+    color: #a8a69c !important;
+    margin-top: 12px;
+    font-weight: 600;
 }
 
+.site-tizert {
+    margin-top: 18px;
+    font-size: 1.8rem;
+    font-weight: 850;
+    color: #f2b233 !important;
+    letter-spacing: 0.08em;
+}
+
+/* CARDS */
 .custom-card {
     background: linear-gradient(180deg, #112036 0%, #0e1a2d 100%);
-    border: 1px solid rgba(29, 212, 223, 0.15);
+    border: 1px solid rgba(242, 178, 51, 0.16);
     border-radius: 18px;
     padding: 17px 19px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
@@ -135,7 +117,7 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
 
 .card-title {
     font-size: 0.95rem;
-    color: #8fb7d8 !important;
+    color: #c7b27a !important;
     font-weight: 700;
     margin-bottom: 6px;
 }
@@ -149,13 +131,13 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
 
 .card-sub {
     font-size: 0.82rem;
-    color: #89a7c4 !important;
+    color: #9ca8bb !important;
     margin-top: 6px;
 }
 
 .executive-box {
     background: linear-gradient(180deg, #10213a 0%, #0d192d 100%);
-    border: 1px solid rgba(29, 212, 223, 0.16);
+    border: 1px solid rgba(242, 178, 51, 0.18);
     border-radius: 18px;
     padding: 18px 20px;
     margin-bottom: 16px;
@@ -166,9 +148,9 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
     display: inline-block;
     padding: 6px 12px;
     border-radius: 999px;
-    background: rgba(29, 212, 223, 0.11);
-    color: #8ee8ef !important;
-    border: 1px solid rgba(29, 212, 223, 0.16);
+    background: rgba(242, 178, 51, 0.12);
+    color: #f2b233 !important;
+    border: 1px solid rgba(242, 178, 51, 0.18);
     font-size: 0.8rem;
     font-weight: 800;
     margin-bottom: 12px;
@@ -184,12 +166,12 @@ div[data-baseweb="select"] > div {
     background-color: #132238 !important;
     color: #ffffff !important;
     border-radius: 10px !important;
-    border: 1px solid rgba(29, 212, 223, 0.12) !important;
+    border: 1px solid rgba(242, 178, 51, 0.14) !important;
 }
 
 section[data-testid="stFileUploader"] {
     background: #132238 !important;
-    border: 1px solid rgba(29, 212, 223, 0.14) !important;
+    border: 1px solid rgba(242, 178, 51, 0.14) !important;
     border-radius: 14px !important;
     padding: 10px !important;
 }
@@ -197,7 +179,7 @@ section[data-testid="stFileUploader"] {
 div[data-testid="stDataFrame"] {
     background: #0f1c2f !important;
     border-radius: 14px !important;
-    border: 1px solid rgba(29, 212, 223, 0.12) !important;
+    border: 1px solid rgba(242, 178, 51, 0.12) !important;
     overflow: hidden !important;
 }
 
@@ -207,11 +189,11 @@ button {
 
 div.stDownloadButton button,
 div.stButton button {
-    background: linear-gradient(90deg, #1597c9 0%, #1dd4df 100%) !important;
+    background: linear-gradient(90deg, #d99721 0%, #f2b233 100%) !important;
     color: #08101f !important;
     border: none !important;
     font-weight: 800 !important;
-    box-shadow: 0 6px 18px rgba(29, 212, 223, 0.18);
+    box-shadow: 0 6px 18px rgba(242, 178, 51, 0.18);
 }
 
 div[role="radiogroup"] > label {
@@ -219,7 +201,7 @@ div[role="radiogroup"] > label {
     border-radius: 10px !important;
     padding: 8px 10px !important;
     margin-bottom: 6px !important;
-    border: 1px solid rgba(29, 212, 223, 0.08);
+    border: 1px solid rgba(242, 178, 51, 0.08);
 }
 
 hr {
@@ -227,23 +209,11 @@ hr {
 }
 
 @media (max-width: 950px) {
-    .header-container {
-        flex-direction: column;
-        align-items: flex-start;
+    .main-logo {
+        width: 330px;
     }
-    .header-left {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .header-logo {
-        width: 230px;
-    }
-    .header-title {
+    .header-title-center {
         font-size: 2rem;
-    }
-    .header-right {
-        text-align: left;
-        width: 100%;
     }
 }
 </style>
@@ -512,6 +482,13 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
     else:
         journalier = pd.DataFrame(columns=["Jour", "Duree_h"])
 
+    total_arrets = round(data["Duree_h"].sum(), 2)
+    autres_arrets = round(max(total_arrets - arrets_planifies - temps_arrets_np, 0), 2)
+    repartition_type = pd.DataFrame({
+        "Type": ["Arrêts planifiés", "Arrêts NP usine arrêtée", "Autres arrêts"],
+        "Durée_h": [arrets_planifies, temps_arrets_np, autres_arrets]
+    })
+
     bloc_kpi = pd.DataFrame({
         "Indicateur": [
             "Année", "Mois", "Temps d'ouverture", "Arrêts planifiés (hr)",
@@ -549,6 +526,7 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
         "top_equipements": top_equipements,
         "pareto_tag": pareto_tag,
         "journalier": journalier,
+        "repartition_type": repartition_type,
         "data": data
     }
 
@@ -597,9 +575,9 @@ def draw_availability_gauge(value):
         (180, 144, "#f36c72"),
         (144, 108, "#f79a9a"),
         (108, 72, "#f0b47e"),
-        (72, 36, "#9ad7df"),
-        (36, 18, "#37c8d6"),
-        (18, 0, "#1dd4df"),
+        (72, 36, "#d9b15f"),
+        (36, 18, "#f2b233"),
+        (18, 0, "#ffe08a"),
     ]
 
     for start, end, color in segments:
@@ -625,7 +603,7 @@ def draw_maintenance_columns(rep_df, total_h):
     ax.axis("off")
 
     categories = ["Mécanique", "Electrique", "Instrumentation", "Automatique"]
-    colors = ["#83d5e8", "#2b8bb8", "#1dd4df", "#59f0ff"]
+    colors = ["#f2b233", "#d99721", "#ffe08a", "#c7a64f"]
     x_positions = [0.12, 0.37, 0.62, 0.87]
 
     for x, cat, color in zip(x_positions, categories, colors):
@@ -644,8 +622,8 @@ def draw_maintenance_columns(rep_df, total_h):
         if fill_h > 0:
             ax.add_patch(Circle((x, 0.15 + fill_h), 0.06, color=color))
 
-        ax.text(x, 0.61, txt, ha="center", va="center", fontsize=7.5, color="#08101f" if fill_h > 0.46 else "white", fontweight="bold")
-        ax.text(x, 0.37 if fill_h < 0.16 else 0.15 + fill_h / 2, f"{pct:.0f}%", ha="center", va="center", fontsize=10, fontweight="bold", color="#08101f" if fill_h > 0.24 else "white")
+        ax.text(x, 0.61, txt, ha="center", va="center", fontsize=7.5, color="#08101f", fontweight="bold")
+        ax.text(x, 0.37 if fill_h < 0.16 else 0.15 + fill_h / 2, f"{pct:.0f}%", ha="center", va="center", fontsize=10, fontweight="bold", color="#08101f")
         ax.text(x, 0.05, cat, ha="center", va="center", fontsize=8, color="white", fontweight="bold")
 
     ax.set_xlim(0, 1)
@@ -667,7 +645,7 @@ def make_dark_bar_plot(df, x_col, y_col, title, xlabel="", ylabel="", rotation=3
         ax.axis("off")
         return fig
 
-    ax.bar(plot_df[x_col].astype(str), plot_df[y_col], color="#1dd4df")
+    ax.bar(plot_df[x_col].astype(str), plot_df[y_col], color="#f2b233")
     ax.set_title(title, color="white", fontsize=13, pad=12, fontweight="bold")
     ax.set_xlabel(xlabel, color="#dbe7f5")
     ax.set_ylabel(ylabel, color="#dbe7f5")
@@ -676,9 +654,32 @@ def make_dark_bar_plot(df, x_col, y_col, title, xlabel="", ylabel="", rotation=3
     ax.grid(axis="y", linestyle="--", alpha=0.18, color="white")
 
     for spine in ax.spines.values():
-        spine.set_color("#294566")
+        spine.set_color("#4c5f7a")
 
     plt.tight_layout()
+    return fig
+
+
+def make_dark_pie_plot(df, label_col, value_col, title):
+    fig, ax = plt.subplots(figsize=(6.5, 4.5), facecolor="#08101f")
+    fig.patch.set_facecolor("#08101f")
+    ax.set_facecolor("#08101f")
+
+    plot_df = df[df[value_col] > 0].copy()
+
+    if plot_df.empty:
+        ax.text(0.5, 0.5, "Aucune donnée disponible", ha="center", va="center", color="white")
+        ax.axis("off")
+        return fig
+
+    ax.pie(
+        plot_df[value_col],
+        labels=plot_df[label_col],
+        autopct="%1.1f%%",
+        startangle=90,
+        textprops={"color": "white", "fontsize": 9}
+    )
+    ax.set_title(title, color="white", fontsize=13, fontweight="bold", pad=12)
     return fig
 
 
@@ -850,28 +851,28 @@ def generate_pdf_report(kpis, params):
 
 
 # =========================================================
-# HEADER PROFESSIONNEL
+# HEADER
 # =========================================================
 logo_base64 = get_logo_base64(LOGO_PATH)
 
 if logo_base64:
-    logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="header-logo">'
+    logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="main-logo">'
 else:
     logo_html = '<div style="color:#fca5a5;font-weight:800;">Logo introuvable : logoo_v2.png</div>'
 
 st.markdown(f"""
-<div class="header-container">
-    <div class="header-left">
+<div class="main-header">
+    <div class="logo-center">
         {logo_html}
-        <div>
-            <div class="header-title">Tableau de bord des arrêts</div>
-            <div class="header-subtitle">Plateforme KPI maintenance - Groupe Managem</div>
-        </div>
     </div>
-    <div class="header-right">
-        <div class="header-site-label">Site industriel</div>
-        <div class="header-site-value">SITE TIZERT</div>
-        <div class="header-date">{datetime.now().strftime('%d/%m/%Y')}</div>
+    <div class="header-title-center">
+        Tableau de bord des arrêts
+    </div>
+    <div class="header-subtitle-center">
+        Plateforme KPI maintenance - Groupe Managem
+    </div>
+    <div class="site-tizert">
+        SITE TIZERT
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -1077,6 +1078,34 @@ if page == "Dashboard principal":
         fig_g = draw_availability_gauge(kpis["disponibilite"])
         st.pyplot(fig_g, use_container_width=True)
 
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("Analyses rapides du mois")
+
+    c1, c2 = st.columns(2, gap="large")
+
+    with c1:
+        st.markdown("#### Top 5 équipements critiques")
+        fig_top5 = make_dark_bar_plot(
+            kpis["top_equipements"].head(5),
+            x_col="Equipement",
+            y_col="Duree_h",
+            title="Top 5 équipements par durée d'arrêt",
+            xlabel="Equipement",
+            ylabel="Durée (h)",
+            rotation=25
+        )
+        st.pyplot(fig_top5, use_container_width=True)
+
+    with c2:
+        st.markdown("#### Répartition des types d'arrêts")
+        fig_type = make_dark_pie_plot(
+            kpis["repartition_type"],
+            label_col="Type",
+            value_col="Durée_h",
+            title="Répartition globale des arrêts"
+        )
+        st.pyplot(fig_type, use_container_width=True)
+
 
 elif page == "Analyses complémentaires":
     st.markdown('<div class="section-chip">Analyses avancées</div>', unsafe_allow_html=True)
@@ -1120,7 +1149,7 @@ elif page == "Analyses complémentaires":
     ax1.set_facecolor("#08101f")
 
     if not pareto.empty:
-        ax1.bar(pareto["TAG_Equipement"], pareto["Duree_h"], color="#1dd4df")
+        ax1.bar(pareto["TAG_Equipement"], pareto["Duree_h"], color="#f2b233")
         ax1.set_ylabel("Durée (h)", color="white")
         ax1.tick_params(axis="x", rotation=40, colors="white")
         ax1.tick_params(axis="y", colors="white")
@@ -1129,7 +1158,7 @@ elif page == "Analyses complémentaires":
         ax1.grid(axis="y", linestyle="--", alpha=0.18, color="white")
 
         ax2 = ax1.twinx()
-        ax2.plot(pareto["TAG_Equipement"], pareto["Cum_%"], marker="o", linewidth=2, color="#4aa8ff")
+        ax2.plot(pareto["TAG_Equipement"], pareto["Cum_%"], marker="o", linewidth=2, color="#ffe08a")
         ax2.set_ylabel("Cumul (%)", color="white")
         ax2.tick_params(axis="y", colors="white")
         ax2.set_ylim(0, 110)
@@ -1142,8 +1171,8 @@ elif page == "Analyses complémentaires":
         fig, ax = plt.subplots(figsize=(10, 4.2), facecolor="#08101f")
         fig.patch.set_facecolor("#08101f")
         ax.set_facecolor("#08101f")
-        ax.plot(kpis["journalier"]["Jour"], kpis["journalier"]["Duree_h"], marker="o", linewidth=2, color="#1dd4df")
-        ax.fill_between(kpis["journalier"]["Jour"], kpis["journalier"]["Duree_h"], alpha=0.16, color="#1dd4df")
+        ax.plot(kpis["journalier"]["Jour"], kpis["journalier"]["Duree_h"], marker="o", linewidth=2, color="#f2b233")
+        ax.fill_between(kpis["journalier"]["Jour"], kpis["journalier"]["Duree_h"], alpha=0.16, color="#f2b233")
         ax.set_xlabel("Jour", color="white")
         ax.set_ylabel("Durée d'arrêt (h)", color="white")
         ax.set_title("Évolution journalière des arrêts", color="white", fontsize=13, fontweight="bold", pad=12)
