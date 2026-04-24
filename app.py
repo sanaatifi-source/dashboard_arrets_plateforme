@@ -55,7 +55,6 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
     color: #e5eefc !important;
 }
 
-/* HEADER */
 .main-header {
     background: #000000;
     border: 1px solid rgba(242, 178, 51, 0.32);
@@ -105,7 +104,6 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
     letter-spacing: 0.08em;
 }
 
-/* CARDS */
 .custom-card {
     background: #050505;
     border: 1px solid rgba(242, 178, 51, 0.18);
@@ -142,6 +140,30 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
     padding: 18px 20px;
     margin-bottom: 16px;
     box-shadow: 0px 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+.alert-box {
+    background: #050505;
+    border-left: 5px solid #f2b233;
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+}
+
+.danger-box {
+    background: #100505;
+    border-left: 5px solid #f36c72;
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+}
+
+.success-box {
+    background: #061009;
+    border-left: 5px solid #5ee08a;
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
 }
 
 .section-chip {
@@ -307,6 +329,33 @@ def render_info_card(title, value, subtitle=""):
     )
 
 
+def priority_from_duration(duree_h, total_h):
+    if total_h <= 0:
+        return "Faible"
+    pct = duree_h / total_h * 100
+    if pct >= 30:
+        return "Critique"
+    if pct >= 15:
+        return "Élevée"
+    if pct >= 7:
+        return "Moyenne"
+    return "Faible"
+
+
+def action_recommendation(row):
+    equip = normalize_text(row.get("Equipement", ""))
+    duree = float(row.get("Duree_h", 0))
+    nb = int(row.get("Nb_arrets", 0)) if "Nb_arrets" in row else 0
+
+    if nb >= 5 and duree >= 10:
+        return "Analyser la récurrence, contrôler les organes critiques et planifier une action de fiabilisation."
+    if duree >= 10:
+        return "Analyser l'arrêt long, vérifier les causes racines et préparer une action corrective ciblée."
+    if nb >= 5:
+        return "Traiter la répétitivité des arrêts par inspection préventive et standardisation des interventions."
+    return "Suivre l'équipement et vérifier si l'arrêt se répète sur les prochains mois."
+
+
 # =========================================================
 # DATA
 # =========================================================
@@ -463,13 +512,23 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
     rep_zone = data.groupby("Zone", dropna=False)["Duree_h"].sum().sort_values(ascending=False).reset_index()
     top_equipements = data.groupby("Equipement", dropna=False)["Duree_h"].sum().sort_values(ascending=False).head(10).reset_index()
 
-    pareto_tag = data.groupby(["TAG", "Equipement"], dropna=False)["Duree_h"].sum().sort_values(ascending=False).reset_index()
+    equip_diag = (
+        data.groupby(["TAG", "Equipement"], dropna=False)
+        .agg(Duree_h=("Duree_h", "sum"), Nb_arrets=("Duree_h", "count"))
+        .reset_index()
+        .sort_values("Duree_h", ascending=False)
+    )
+    equip_diag["TAG_Equipement"] = equip_diag["TAG"].astype(str) + " | " + equip_diag["Equipement"].astype(str)
 
+    total_arrets_all = equip_diag["Duree_h"].sum() if not equip_diag.empty else 0.0
+    equip_diag["Part_globale_%"] = equip_diag["Duree_h"].apply(lambda x: round((x / total_arrets_all * 100), 2) if total_arrets_all > 0 else 0.0)
+    equip_diag["Priorité"] = equip_diag["Duree_h"].apply(lambda x: priority_from_duration(x, total_arrets_all))
+    equip_diag["Action recommandée"] = equip_diag.apply(action_recommendation, axis=1)
+
+    pareto_tag = equip_diag[["TAG", "Equipement", "Duree_h", "TAG_Equipement"]].copy()
     if not pareto_tag.empty and pareto_tag["Duree_h"].sum() > 0:
-        pareto_tag["TAG_Equipement"] = pareto_tag["TAG"].astype(str) + " | " + pareto_tag["Equipement"].astype(str)
         pareto_tag["Cum_%"] = pareto_tag["Duree_h"].cumsum() / pareto_tag["Duree_h"].sum() * 100
     else:
-        pareto_tag["TAG_Equipement"] = ""
         pareto_tag["Cum_%"] = 0.0
 
     if "Date" in data.columns:
@@ -488,6 +547,8 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
         "Type": ["Arrêts planifiés", "Arrêts NP usine arrêtée", "Autres arrêts"],
         "Durée_h": [arrets_planifies, temps_arrets_np, autres_arrets]
     })
+
+    arrets_longs = data.sort_values("Duree_h", ascending=False).head(10).copy()
 
     bloc_kpi = pd.DataFrame({
         "Indicateur": [
@@ -527,6 +588,8 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
         "pareto_tag": pareto_tag,
         "journalier": journalier,
         "repartition_type": repartition_type,
+        "equip_diag": equip_diag,
+        "arrets_longs": arrets_longs,
         "data": data
     }
 
@@ -556,10 +619,39 @@ def generate_executive_summary(kpis):
     elif kpis["mttr"] > 0:
         messages.append("Le MTTR reste maîtrisé, mais doit être suivi dans les prochains mois.")
 
+    if kpis["mtbf"] > 0 and kpis["mtbf"] < 20:
+        messages.append("Le MTBF est faible. La fréquence des pannes est élevée et nécessite une action de fiabilisation.")
+
     if kpis["maintenance_total_h"] > 0:
         messages.append("La priorité d’amélioration doit être orientée vers les équipements les plus pénalisants du Pareto.")
 
     return messages
+
+
+def generate_alerts(kpis, obj_trs, obj_dispo, seuil_mttr, seuil_mtbf):
+    alerts = []
+
+    if kpis["trs"] < obj_trs:
+        alerts.append(("danger", f"TRS inférieur à l’objectif : {kpis['trs']} % < {obj_trs} %."))
+    else:
+        alerts.append(("success", f"TRS conforme à l’objectif : {kpis['trs']} % ≥ {obj_trs} %."))
+
+    if kpis["disponibilite"] < obj_dispo:
+        alerts.append(("danger", f"Disponibilité inférieure à l’objectif : {kpis['disponibilite']} % < {obj_dispo} %."))
+    else:
+        alerts.append(("success", f"Disponibilité conforme à l’objectif : {kpis['disponibilite']} % ≥ {obj_dispo} %."))
+
+    if kpis["mttr"] > seuil_mttr:
+        alerts.append(("danger", f"MTTR élevé : {kpis['mttr']} h > seuil {seuil_mttr} h."))
+    else:
+        alerts.append(("success", f"MTTR maîtrisé : {kpis['mttr']} h ≤ seuil {seuil_mttr} h."))
+
+    if kpis["mtbf"] > 0 and kpis["mtbf"] < seuil_mtbf:
+        alerts.append(("danger", f"MTBF faible : {kpis['mtbf']} h < seuil {seuil_mtbf} h."))
+    elif kpis["mtbf"] > 0:
+        alerts.append(("success", f"MTBF acceptable : {kpis['mtbf']} h ≥ seuil {seuil_mtbf} h."))
+
+    return alerts
 
 
 # =========================================================
@@ -783,7 +875,7 @@ def make_pdf_daily_plot(journalier):
     return fig
 
 
-def generate_pdf_report(kpis, params):
+def generate_pdf_report(kpis, params, alerts):
     buffer = io.BytesIO()
 
     with PdfPages(buffer) as pdf:
@@ -802,6 +894,8 @@ def generate_pdf_report(kpis, params):
 
         summary = generate_executive_summary(kpis)
         lines = [f"{i}. {msg}" for i, msg in enumerate(summary, 1)]
+        lines.extend(["", "Alertes KPI :"])
+        lines.extend([f"- {msg}" for _, msg in alerts])
         lines.extend([
             "",
             "Synthèse chiffrée :",
@@ -813,10 +907,11 @@ def generate_pdf_report(kpis, params):
             f"Maintenance totale : {format_h(kpis['maintenance_total_h'])}",
             f"Nombre d'arrêts maintenance : {kpis['maintenance_total_n']}",
         ])
-        add_pdf_text_page(pdf, "Résumé exécutif", lines)
+        add_pdf_text_page(pdf, "Résumé exécutif et alertes", lines)
 
         add_pdf_table_page(pdf, "Bloc KPI détaillé", kpis["bloc_kpi"], max_rows=20)
         add_pdf_table_page(pdf, "Synthèse maintenance", kpis["rep_maintenance_final"], max_rows=10)
+        add_pdf_table_page(pdf, "Diagnostic et plan d'action", kpis["equip_diag"][["TAG_Equipement", "Duree_h", "Nb_arrets", "Part_globale_%", "Priorité", "Action recommandée"]], max_rows=10)
 
         fig_zone = make_pdf_bar_plot(kpis["rep_zone"], "Zone", "Duree_h", "Répartition des arrêts par zone", top_n=12)
         pdf.savefig(fig_zone, bbox_inches="tight")
@@ -883,7 +978,7 @@ st.markdown(f"""
 # =========================================================
 page = st.sidebar.radio(
     "Navigation",
-    ["Dashboard principal", "Analyses complémentaires", "Données", "Aide"]
+    ["Dashboard principal", "Analyses complémentaires", "Diagnostic & Plan d’action", "Données", "Aide"]
 )
 
 uploaded_file = st.sidebar.file_uploader(
@@ -920,6 +1015,14 @@ tonnage_realise = st.sidebar.number_input("Tonnage réalisé", min_value=0.0, va
 taux_qualite_pct = st.sidebar.number_input("Taux de qualité (%)", min_value=0.0, max_value=200.0, value=102.0, step=0.1)
 taux_qualite = taux_qualite_pct / 100
 
+st.sidebar.markdown("---")
+st.sidebar.subheader("Objectifs & seuils")
+
+obj_trs = st.sidebar.number_input("Objectif TRS (%)", min_value=0.0, max_value=200.0, value=80.0, step=1.0)
+obj_dispo = st.sidebar.number_input("Objectif disponibilité (%)", min_value=0.0, max_value=100.0, value=85.0, step=1.0)
+seuil_mttr = st.sidebar.number_input("Seuil MTTR critique (h)", min_value=0.0, value=4.0, step=0.5)
+seuil_mtbf = st.sidebar.number_input("Seuil MTBF minimum (h)", min_value=0.0, value=20.0, step=1.0)
+
 
 if uploaded_file is None:
     st.info("Importez le fichier brut des arrêts depuis la barre latérale pour générer le dashboard.")
@@ -928,7 +1031,7 @@ if uploaded_file is None:
         <h3>Objectif de la plateforme</h3>
         <p>
         Cette application transforme automatiquement une base brute mensuelle des arrêts
-        en tableau de bord KPI maintenance avec analyses, graphiques et rapport PDF professionnel.
+        en tableau de bord KPI maintenance avec analyses, graphiques, diagnostic et rapport PDF professionnel.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -950,25 +1053,41 @@ df = prepare_data(raw_df)
 zones = sorted(df["Zone"].dropna().unique()) if "Zone" in df.columns else []
 imputations = sorted(df["Imputation arrêt"].dropna().unique()) if "Imputation arrêt" in df.columns else []
 tags = sorted(df["TAG"].dropna().unique()) if "TAG" in df.columns else []
+types_panne = sorted(df["Type de panne"].dropna().unique()) if "Type de panne" in df.columns else []
+equipements = sorted(df["Equipement"].dropna().unique()) if "Equipement" in df.columns else []
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Filtres")
+st.sidebar.subheader("Filtres avancés")
 
 selected_zones = st.sidebar.multiselect("Filtrer Zone", zones, default=zones)
 selected_imputations = st.sidebar.multiselect("Filtrer Imputation arrêt", imputations, default=imputations)
 selected_tags = st.sidebar.multiselect("Filtrer TAG", tags, default=tags)
+selected_types = st.sidebar.multiselect("Filtrer Type de panne", types_panne, default=types_panne)
+selected_equipements = st.sidebar.multiselect("Filtrer Equipement", equipements, default=equipements)
 
 df_filtered = df.copy()
 
 if selected_zones:
     df_filtered = df_filtered[df_filtered["Zone"].isin(selected_zones)]
-
 if selected_imputations:
     df_filtered = df_filtered[df_filtered["Imputation arrêt"].isin(selected_imputations)]
-
 if selected_tags:
     df_filtered = df_filtered[df_filtered["TAG"].isin(selected_tags)]
+if selected_types:
+    df_filtered = df_filtered[df_filtered["Type de panne"].isin(selected_types)]
+if selected_equipements:
+    df_filtered = df_filtered[df_filtered["Equipement"].isin(selected_equipements)]
 
+if "Date" in df_filtered.columns and df_filtered["Date"].notna().any():
+    min_date = df_filtered["Date"].min().date()
+    max_date = df_filtered["Date"].max().date()
+    date_range = st.sidebar.date_input("Filtrer période", value=(min_date, max_date))
+    if isinstance(date_range, tuple) and len(date_range) == 2:
+        start_date, end_date = date_range
+        df_filtered = df_filtered[
+            (df_filtered["Date"].dt.date >= start_date) &
+            (df_filtered["Date"].dt.date <= end_date)
+        ]
 
 kpis = compute_kpis(
     df_filtered,
@@ -979,6 +1098,8 @@ kpis = compute_kpis(
     tonnage_realise=tonnage_realise,
     taux_qualite=taux_qualite
 )
+
+alerts = generate_alerts(kpis, obj_trs, obj_dispo, seuil_mttr, seuil_mtbf)
 
 params = {
     "annee": annee,
@@ -1004,16 +1125,21 @@ if page == "Dashboard principal":
         st.write(f"- {msg}")
     st.markdown('</div>', unsafe_allow_html=True)
 
+    st.subheader("Alertes KPI")
+    for level, msg in alerts:
+        css_class = "danger-box" if level == "danger" else "success-box"
+        st.markdown(f'<div class="{css_class}">{msg}</div>', unsafe_allow_html=True)
+
     m1, m2, m3, m4 = st.columns(4)
 
     with m1:
-        render_info_card("TRS", f"{kpis['trs']} %", "Taux de rendement synthétique")
+        render_info_card("TRS", f"{kpis['trs']} %", f"Objectif : {obj_trs} %")
     with m2:
-        render_info_card("Disponibilité", f"{kpis['disponibilite']} %", "Disponibilité maintenance")
+        render_info_card("Disponibilité", f"{kpis['disponibilite']} %", f"Objectif : {obj_dispo} %")
     with m3:
-        render_info_card("MTBF", f"{kpis['mtbf']} h", "Temps moyen entre pannes")
+        render_info_card("MTBF", f"{kpis['mtbf']} h", f"Seuil min : {seuil_mtbf} h")
     with m4:
-        render_info_card("MTTR", f"{kpis['mttr']} h", "Temps moyen de réparation")
+        render_info_card("MTTR", f"{kpis['mttr']} h", f"Seuil max : {seuil_mttr} h")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1055,7 +1181,7 @@ if page == "Dashboard principal":
 
         st.dataframe(synthese, use_container_width=True, height=330)
 
-        pdf_bytes = generate_pdf_report(kpis, params)
+        pdf_bytes = generate_pdf_report(kpis, params, alerts)
 
         st.download_button(
             "Télécharger le rapport PDF",
@@ -1184,6 +1310,41 @@ elif page == "Analyses complémentaires":
         st.info("Pas de dates exploitables.")
 
 
+elif page == "Diagnostic & Plan d’action":
+    st.markdown('<div class="section-chip">Diagnostic maintenance</div>', unsafe_allow_html=True)
+
+    st.subheader("Diagnostic automatique des équipements critiques")
+    diag = kpis["equip_diag"][["TAG_Equipement", "Duree_h", "Nb_arrets", "Part_globale_%", "Priorité", "Action recommandée"]].head(15)
+    st.dataframe(diag, use_container_width=True, height=420)
+
+    c1, c2 = st.columns(2, gap="large")
+
+    with c1:
+        st.subheader("Arrêts les plus longs")
+        cols = ["Date", "Zone", "TAG", "Equipement", "Imputation arrêt", "Duree_h", "Description Arrêt"]
+        existing_cols = [c for c in cols if c in kpis["arrets_longs"].columns]
+        st.dataframe(kpis["arrets_longs"][existing_cols], use_container_width=True, height=360)
+
+    with c2:
+        st.subheader("Priorités d’action")
+        priority_table = diag.groupby("Priorité").agg(
+            Nombre=("TAG_Equipement", "count"),
+            Duree_totale_h=("Duree_h", "sum")
+        ).reset_index()
+        st.dataframe(priority_table, use_container_width=True, height=200)
+
+        fig_priority = make_dark_bar_plot(
+            priority_table,
+            x_col="Priorité",
+            y_col="Duree_totale_h",
+            title="Durée totale par niveau de priorité",
+            xlabel="Priorité",
+            ylabel="Durée (h)",
+            rotation=0
+        )
+        st.pyplot(fig_priority, use_container_width=True)
+
+
 elif page == "Données":
     st.markdown('<div class="section-chip">Exploration des données</div>', unsafe_allow_html=True)
 
@@ -1216,7 +1377,7 @@ elif page == "Aide":
     st.subheader("Principe")
     st.write(
         "L'utilisateur importe seulement la base brute des arrêts. "
-        "La plateforme calcule automatiquement les KPI, affiche les graphiques et génère un rapport PDF."
+        "La plateforme calcule automatiquement les KPI, affiche les graphiques, génère un diagnostic et crée un rapport PDF."
     )
 
     st.subheader("Colonnes obligatoires")
