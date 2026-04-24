@@ -914,286 +914,72 @@ def generate_pdf_report(kpis, params, alerts):
     buffer = io.BytesIO()
 
     with PdfPages(buffer) as pdf:
-
-        # =========================
-        # PAGE 1 : COUVERTURE
-        # =========================
-        fig = plt.figure(figsize=(11.69, 8.27))
-        fig.patch.set_facecolor("white")
-        plt.axis("off")
-
-     # Logo désactivé dans le PDF pour éviter l'erreur de lecture image sur Streamlit Cloud
-plt.text(
-    0.5, 0.72,
-    "MANAGEM",
-    ha="center",
-    fontsize=28,
-    fontweight="bold",
-    color="#d99721"
-)
-
-        plt.text(
-            0.5, 0.55,
-            "RAPPORT KPI DES ARRÊTS",
-            ha="center",
-            fontsize=24,
-            fontweight="bold",
-            color="#111827"
-        )
-
-        plt.text(
-            0.5, 0.48,
-            "Plateforme KPI Maintenance - Groupe Managem",
-            ha="center",
-            fontsize=14,
-            color="#374151"
-        )
-
-        plt.text(
-            0.5, 0.40,
-            "SITE TIZERT",
-            ha="center",
-            fontsize=20,
-            fontweight="bold",
-            color="#d99721"
-        )
-
-        plt.text(
-            0.5, 0.32,
+        add_pdf_text_page(pdf, "Rapport KPI des arrêts - Managem", [
+            "Rapport automatique généré par la plateforme Dashboard Arrêts - Managem.",
+            "Site : Tizert",
             f"Période analysée : {params['mois']} {params['annee']}",
-            ha="center",
-            fontsize=13,
-            color="#111827"
-        )
-
-        plt.text(
-            0.5, 0.27,
             f"Date de génération : {datetime.now().strftime('%d/%m/%Y %H:%M')}",
-            ha="center",
-            fontsize=11,
-            color="#4b5563"
-        )
+            "",
+            "KPI principaux :",
+            f"TRS : {format_pct(kpis['trs'])}",
+            f"Disponibilité maintenance : {format_pct(kpis['disponibilite'])}",
+            f"MTBF : {format_h(kpis['mtbf'])}",
+            f"MTTR : {format_h(kpis['mttr'])}",
+        ])
 
-        plt.text(
-            0.5, 0.12,
-            "Document généré automatiquement par la plateforme Dashboard Arrêts",
-            ha="center",
-            fontsize=10,
-            color="#6b7280"
-        )
-
-        pdf.savefig(fig, bbox_inches="tight")
-        plt.close(fig)
-
-        # =========================
-        # PAGE 2 : SYNTHÈSE KPI
-        # =========================
-        fig = plt.figure(figsize=(11.69, 8.27))
-        fig.patch.set_facecolor("white")
-        plt.axis("off")
-
-        plt.text(0.05, 0.93, "1. Synthèse des KPI", fontsize=20, fontweight="bold", color="#111827")
-        plt.text(0.05, 0.89, "Site : SITE TIZERT", fontsize=11, color="#374151")
-        plt.text(0.05, 0.86, f"Période : {params['mois']} {params['annee']}", fontsize=11, color="#374151")
-
-        kpi_table = pd.DataFrame({
-            "Indicateur": [
-                "TRS",
-                "Disponibilité maintenance",
-                "MTBF",
-                "MTTR",
-                "Temps requis",
-                "Temps de fonctionnement",
-                "Temps net",
-                "Maintenance totale",
-                "Nombre d'arrêts maintenance"
-            ],
-            "Valeur": [
-                format_pct(kpis["trs"]),
-                format_pct(kpis["disponibilite"]),
-                format_h(kpis["mtbf"]),
-                format_h(kpis["mttr"]),
-                format_h(kpis["temps_requis"]),
-                format_h(kpis["temps_fonctionnement"]),
-                format_h(kpis["temps_net"]),
-                format_h(kpis["maintenance_total_h"]),
-                kpis["maintenance_total_n"]
-            ]
-        })
-
-        ax_table = fig.add_axes([0.08, 0.35, 0.84, 0.42])
-        ax_table.axis("off")
-
-        table = ax_table.table(
-            cellText=kpi_table.values,
-            colLabels=kpi_table.columns,
-            loc="center",
-            cellLoc="center"
-        )
-
-        table.auto_set_font_size(False)
-        table.set_fontsize(10)
-        table.scale(1, 1.7)
-
-        for (row, col), cell in table.get_celld().items():
-            cell.set_edgecolor("#9ca3af")
-            if row == 0:
-                cell.set_facecolor("#132238")
-                cell.set_text_props(color="white", weight="bold")
-            else:
-                cell.set_facecolor("#f8fafc")
-                cell.set_text_props(color="#111827")
-
-        plt.text(
-            0.05, 0.20,
-            "Lecture rapide : ces indicateurs permettent d’évaluer la performance globale du mois, "
-            "la disponibilité maintenance et l’impact des arrêts sur le temps requis.",
-            fontsize=11,
-            color="#374151",
-            wrap=True
-        )
-
-        pdf.savefig(fig, bbox_inches="tight")
-        plt.close(fig)
-
-        # =========================
-        # PAGE 3 : RÉSUMÉ EXÉCUTIF
-        # =========================
         summary = generate_executive_summary(kpis)
+        lines = [f"{i}. {msg}" for i, msg in enumerate(summary, 1)]
+        lines.extend(["", "Alertes KPI :"])
+        lines.extend([f"- {msg}" for _, msg in alerts])
+        lines.extend([
+            "",
+            "Synthèse chiffrée :",
+            f"Temps requis : {format_h(kpis['temps_requis'])}",
+            f"Temps de fonctionnement : {format_h(kpis['temps_fonctionnement'])}",
+            f"Temps net : {format_h(kpis['temps_net'])}",
+            f"Arrêts planifiés : {format_h(kpis['arrets_planifies'])}",
+            f"Temps arrêts non planifiés : {format_h(kpis['temps_arrets_np'])}",
+            f"Maintenance totale : {format_h(kpis['maintenance_total_h'])}",
+            f"Nombre d'arrêts maintenance : {kpis['maintenance_total_n']}",
+        ])
+        add_pdf_text_page(pdf, "Résumé exécutif et alertes", lines)
 
-        fig = plt.figure(figsize=(11.69, 8.27))
-        fig.patch.set_facecolor("white")
-        plt.axis("off")
-
-        plt.text(0.05, 0.93, "2. Résumé exécutif automatique", fontsize=20, fontweight="bold", color="#111827")
-
-        y = 0.82
-        for i, msg in enumerate(summary, 1):
-            plt.text(
-                0.08, y,
-                f"{i}. {msg}",
-                fontsize=11,
-                color="#111827",
-                wrap=True
-            )
-            y -= 0.08
-
-        plt.text(0.05, y - 0.03, "Alertes KPI", fontsize=16, fontweight="bold", color="#111827")
-        y -= 0.10
-
-        for level, msg in alerts:
-            color = "#b91c1c" if level == "danger" else "#15803d" if level == "success" else "#92400e"
-            plt.text(
-                0.08, y,
-                f"- {msg}",
-                fontsize=11,
-                color=color,
-                wrap=True
-            )
-            y -= 0.06
-
-        pdf.savefig(fig, bbox_inches="tight")
-        plt.close(fig)
-
-        # =========================
-        # PAGE 4 : BLOC KPI DÉTAILLÉ
-        # =========================
-        add_pdf_table_page(pdf, "3. Bloc KPI détaillé", kpis["bloc_kpi"], max_rows=20)
-
-        # =========================
-        # PAGE 5 : SYNTHÈSE MAINTENANCE
-        # =========================
-        add_pdf_table_page(pdf, "4. Synthèse maintenance", kpis["rep_maintenance_final"], max_rows=10)
-
-        # =========================
-        # PAGE 6 : DIAGNOSTIC & PLAN D'ACTION
-        # =========================
-        diag_pdf = kpis["equip_diag"][
-            ["TAG_Equipement", "Duree_h", "Nb_arrets", "Part_globale_%", "Priorité", "Action recommandée"]
-        ].head(10)
-
-        diag_pdf = diag_pdf.rename(columns={
-            "TAG_Equipement": "TAG | Equipement",
-            "Duree_h": "Durée (h)",
-            "Nb_arrets": "Nb arrêts",
-            "Part_globale_%": "Part (%)"
-        })
-
-        add_pdf_table_page(pdf, "5. Diagnostic et plan d'action", diag_pdf, max_rows=10)
-
-        # =========================
-        # PAGE 7 : GRAPHIQUE PAR ZONE
-        # =========================
-        fig_zone = make_pdf_bar_plot(
-            kpis["rep_zone"],
-            "Zone",
-            "Duree_h",
-            "6. Répartition des arrêts par zone",
-            top_n=12
+        add_pdf_table_page(pdf, "Bloc KPI détaillé", kpis["bloc_kpi"], max_rows=20)
+        add_pdf_table_page(pdf, "Synthèse maintenance", kpis["rep_maintenance_final"], max_rows=10)
+        add_pdf_table_page(
+            pdf,
+            "Diagnostic et plan d'action",
+            kpis["equip_diag"][["TAG_Equipement", "Duree_h", "Nb_arrets", "Part_globale_%", "Priorité", "Action recommandée"]],
+            max_rows=10
         )
+
+        fig_zone = make_pdf_bar_plot(kpis["rep_zone"], "Zone", "Duree_h", "Répartition des arrêts par zone", top_n=12)
         pdf.savefig(fig_zone, bbox_inches="tight")
         plt.close(fig_zone)
 
-        # =========================
-        # PAGE 8 : TOP ÉQUIPEMENTS
-        # =========================
-        fig_eq = make_pdf_bar_plot(
-            kpis["top_equipements"],
-            "Equipement",
-            "Duree_h",
-            "7. Top équipements pénalisants",
-            top_n=10
-        )
+        fig_eq = make_pdf_bar_plot(kpis["top_equipements"], "Equipement", "Duree_h", "Top équipements pénalisants", top_n=10)
         pdf.savefig(fig_eq, bbox_inches="tight")
         plt.close(fig_eq)
 
-        # =========================
-        # PAGE 9 : PARETO TAG | EQUIPEMENT
-        # =========================
         fig_pareto = make_pdf_pareto_plot(kpis["pareto_tag"])
         pdf.savefig(fig_pareto, bbox_inches="tight")
         plt.close(fig_pareto)
 
-        # =========================
-        # PAGE 10 : ÉVOLUTION JOURNALIÈRE
-        # =========================
         fig_daily = make_pdf_daily_plot(kpis["journalier"])
         pdf.savefig(fig_daily, bbox_inches="tight")
         plt.close(fig_daily)
 
-        # =========================
-        # PAGE 11 : CONCLUSION
-        # =========================
-        fig = plt.figure(figsize=(11.69, 8.27))
-        fig.patch.set_facecolor("white")
-        plt.axis("off")
-
-        plt.text(0.05, 0.93, "8. Conclusion et recommandations", fontsize=20, fontweight="bold", color="#111827")
-
-        conclusions = [
+        add_pdf_text_page(pdf, "Conclusion et recommandations", [
             "Ce rapport met en évidence les KPI principaux de performance et de maintenance.",
-            "Le Pareto par TAG | Equipement permet d’identifier les équipements les plus pénalisants.",
-            "Les priorités d’action permettent d’orienter les interventions vers les équipements à fort impact.",
-            "Les alertes KPI dépendent des seuils saisis par l’utilisateur et ne sont pas des valeurs imposées.",
-            "La plateforme peut être utilisée comme support de suivi mensuel standardisé pour le site Tizert."
-        ]
-
-        y = 0.82
-        for i, line in enumerate(conclusions, 1):
-            plt.text(0.08, y, f"{i}. {line}", fontsize=12, color="#111827", wrap=True)
-            y -= 0.08
-
-        plt.text(
-            0.05, 0.25,
-            "Recommandation générale : prioriser les équipements critiques, analyser les arrêts longs "
-            "et suivre mensuellement l’évolution du TRS, de la disponibilité, du MTBF et du MTTR.",
-            fontsize=12,
-            color="#374151",
-            wrap=True
-        )
-
-        pdf.savefig(fig, bbox_inches="tight")
-        plt.close(fig)
+            "L'analyse Pareto permet d'identifier les équipements qui contribuent le plus aux pertes.",
+            "",
+            "Recommandations générales :",
+            "1. Suivre mensuellement l'évolution du TRS, MTBF et MTTR.",
+            "2. Prioriser les équipements du Pareto pour les actions de fiabilisation.",
+            "3. Analyser les arrêts longs et récurrents.",
+            "4. Mettre en place un plan d'action maintenance ciblé par zone et par équipement.",
+            "5. Utiliser cette plateforme comme outil de suivi mensuel standardisé."
+        ])
 
     buffer.seek(0)
     return buffer.getvalue()
