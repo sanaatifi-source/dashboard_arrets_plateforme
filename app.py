@@ -11,7 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 
 st.set_page_config(
-    page_title="Dashboard Arrêts - Site Tizert",
+    page_title="Tableau de bord des arrêts",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -64,110 +64,17 @@ p, label, span, div {
 }
 
 .block-container {
-    padding-top: 0.4rem !important;
+    padding-top: 0.6rem !important;
     padding-bottom: 1.5rem !important;
-    max-width: 1550px;
+    max-width: 1500px;
 }
 
-/* HEADER PROFESSIONNEL */
-.top-header {
-    width: 100%;
-    background: linear-gradient(135deg, #08101f 0%, #10213a 55%, #0d1728 100%);
-    border: 1px solid rgba(29, 212, 223, 0.18);
-    border-radius: 22px;
-    padding: 18px 26px;
-    margin-bottom: 22px;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
-}
-
-.header-content {
+.logo-box {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 26px;
-}
-
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-}
-
-.header-logo {
-    width: 260px;
-    max-width: 260px;
-    height: auto;
-    object-fit: contain;
-}
-
-.header-title-block {
-    display: flex;
-    flex-direction: column;
     justify-content: center;
-}
-
-.header-title {
-    font-size: 2.25rem;
-    font-weight: 850;
-    color: #ffffff !important;
-    margin: 0;
-    line-height: 1.1;
-}
-
-.header-subtitle {
-    font-size: 1.02rem;
-    color: #9eb8d6 !important;
-    margin-top: 8px;
-}
-
-.header-site {
-    text-align: right;
-    background: rgba(29, 212, 223, 0.09);
-    border: 1px solid rgba(29, 212, 223, 0.18);
-    border-radius: 16px;
-    padding: 12px 18px;
-    min-width: 190px;
-}
-
-.header-site-label {
-    font-size: 0.78rem;
-    color: #9eb8d6 !important;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.header-site-value {
-    font-size: 1.35rem;
-    color: #1dd4df !important;
-    font-weight: 850;
-    margin-top: 4px;
-}
-
-@media (max-width: 900px) {
-    .header-content {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .header-left {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .header-logo {
-        width: 220px;
-        max-width: 220px;
-    }
-
-    .header-title {
-        font-size: 1.75rem;
-    }
-
-    .header-site {
-        text-align: left;
-        width: 100%;
-    }
+    align-items: center;
+    padding: 0px 0 6px 0;
+    margin-bottom: 2px;
 }
 
 .custom-card {
@@ -197,6 +104,14 @@ p, label, span, div {
     font-size: 0.8rem;
     color: #89a7c4 !important;
     margin-top: 6px;
+}
+
+.hero-box {
+    background: linear-gradient(135deg, rgba(29,212,223,0.08) 0%, rgba(74,168,255,0.05) 100%);
+    border: 1px solid rgba(29, 212, 223, 0.16);
+    border-radius: 20px;
+    padding: 18px 24px 12px 24px;
+    margin-bottom: 18px;
 }
 
 div[data-testid="stMetric"] {
@@ -304,7 +219,7 @@ hr {
 # =========================================================
 # LOGO
 # =========================================================
-LOGO_PATH = Path("logoo_v2.png")
+LOGO_PATH = Path("logoo.png")
 
 
 # =========================================================
@@ -559,7 +474,7 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
             "Duree_h": round(duree, 2),
             "Duree_txt": to_hhmmss(duree),
             "Nb_arrets": nb,
-            "Part maintenance (%)": round(pct, 2)
+            "Pct": round(pct, 2)
         })
 
     rep_maintenance_final = pd.DataFrame(rows)
@@ -710,7 +625,7 @@ def generate_executive_summary(kpis):
 
 
 # =========================================================
-# VISUELS
+# VISUELS STREAMLIT
 # =========================================================
 def draw_availability_gauge(value):
     fig, ax = plt.subplots(figsize=(6.2, 3.2), facecolor="#08101f")
@@ -759,7 +674,7 @@ def draw_maintenance_columns(rep_df, total_h):
     for x, cat, color in zip(x_positions, categories, colors):
         row = rep_df[rep_df["Categorie"] == cat]
         duree = float(row["Duree_h"].iloc[0]) if not row.empty else 0.0
-        pct = float(row["Part maintenance (%)"].iloc[0]) if not row.empty else 0.0
+        pct = float(row["Pct"].iloc[0]) if not row.empty else 0.0
         txt = row["Duree_txt"].iloc[0] if not row.empty else "00:00:00"
 
         height = pct / 100 if total_h > 0 else 0
@@ -773,9 +688,32 @@ def draw_maintenance_columns(rep_df, total_h):
         if fill_h > 0:
             ax.add_patch(Circle((x, 0.15 + fill_h), 0.06, color=color, alpha=0.98))
 
-        ax.text(x, 0.61, txt, ha="center", va="center", fontsize=7.5, color="#08101f" if fill_h > 0.46 else "white", fontweight="bold")
-        ax.text(x, 0.37 if fill_h < 0.16 else 0.15 + fill_h / 2, f"{pct:.0f}%", ha="center", va="center", fontsize=10, fontweight="bold", color="#08101f" if fill_h > 0.24 else "white")
-        ax.text(x, 0.05, cat, ha="center", va="center", fontsize=8, color="white", fontweight="bold")
+        ax.text(
+            x, 0.61, txt,
+            ha="center", va="center",
+            fontsize=7.5,
+            color="#08101f" if fill_h > 0.46 else "white",
+            fontweight="bold"
+        )
+
+        ax.text(
+            x,
+            0.37 if fill_h < 0.16 else 0.15 + fill_h / 2,
+            f"{pct:.0f}%",
+            ha="center",
+            va="center",
+            fontsize=10,
+            fontweight="bold",
+            color="#08101f" if fill_h > 0.24 else "white"
+        )
+
+        ax.text(
+            x, 0.05, cat,
+            ha="center", va="center",
+            fontsize=8,
+            color="white",
+            fontweight="bold"
+        )
 
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
@@ -812,45 +750,8 @@ def make_dark_bar_plot(df, x_col, y_col, title, xlabel=None, ylabel=None, rotati
 
 
 # =========================================================
-# PDF
+# GRAPHIQUES POUR PDF
 # =========================================================
-def add_pdf_text_page(pdf, title, lines):
-    fig = plt.figure(figsize=(11.69, 8.27))
-    fig.patch.set_facecolor("white")
-    plt.axis("off")
-    plt.text(0.05, 0.92, title, fontsize=22, fontweight="bold", color="#0b1326")
-
-    y = 0.82
-    for line in lines:
-        plt.text(0.07, y, line, fontsize=12, color="#111827", wrap=True)
-        y -= 0.055
-
-    pdf.savefig(fig, bbox_inches="tight")
-    plt.close(fig)
-
-
-def add_pdf_table_page(pdf, title, df, max_rows=18):
-    fig, ax = plt.subplots(figsize=(11.69, 8.27))
-    ax.axis("off")
-    ax.text(0.03, 0.96, title, fontsize=18, fontweight="bold", transform=ax.transAxes)
-
-    table_df = df.head(max_rows).copy()
-    table = ax.table(cellText=table_df.values, colLabels=table_df.columns, loc="center", cellLoc="center")
-    table.auto_set_font_size(False)
-    table.set_fontsize(8.5)
-    table.scale(1, 1.4)
-
-    for (row, col), cell in table.get_celld().items():
-        if row == 0:
-            cell.set_text_props(weight="bold", color="white")
-            cell.set_facecolor("#132238")
-        else:
-            cell.set_facecolor("#f4f7fb")
-
-    pdf.savefig(fig, bbox_inches="tight")
-    plt.close(fig)
-
-
 def make_pdf_bar_plot(df, x_col, y_col, title, top_n=10):
     fig, ax = plt.subplots(figsize=(11, 6))
     plot_df = df.copy().head(top_n)
@@ -907,29 +808,86 @@ def make_pdf_daily_plot(journalier):
     ax.set_ylabel("Durée (h)")
     ax.tick_params(axis="x", rotation=35)
     ax.grid(alpha=0.25)
+
     plt.tight_layout()
     return fig
+
+
+# =========================================================
+# PDF PROFESSIONNEL
+# =========================================================
+def add_pdf_text_page(pdf, title, lines):
+    fig = plt.figure(figsize=(11.69, 8.27))
+    fig.patch.set_facecolor("white")
+
+    plt.axis("off")
+    plt.text(0.05, 0.92, title, fontsize=22, fontweight="bold", color="#0b1326")
+
+    y = 0.82
+    for line in lines:
+        plt.text(0.07, y, line, fontsize=12, color="#111827", wrap=True)
+        y -= 0.055
+
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
+def add_pdf_table_page(pdf, title, df, max_rows=18):
+    fig, ax = plt.subplots(figsize=(11.69, 8.27))
+    ax.axis("off")
+
+    ax.text(0.03, 0.96, title, fontsize=18, fontweight="bold", transform=ax.transAxes)
+
+    table_df = df.head(max_rows).copy()
+    table = ax.table(
+        cellText=table_df.values,
+        colLabels=table_df.columns,
+        loc="center",
+        cellLoc="center"
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(8.5)
+    table.scale(1, 1.4)
+
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:
+            cell.set_text_props(weight="bold", color="white")
+            cell.set_facecolor("#132238")
+        else:
+            cell.set_facecolor("#f4f7fb")
+
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
 
 
 def generate_pdf_report(kpis, params):
     buffer = io.BytesIO()
 
     with PdfPages(buffer) as pdf:
-        add_pdf_text_page(pdf, "Rapport KPI des arrêts - Managem", [
-            "Rapport automatique généré par la plateforme Dashboard Arrêts - Managem.",
-            f"Site : Tizert",
+        # Page 1 : couverture
+        cover_lines = [
+            "Rapport automatique généré par la plateforme Dashboard Arrêts - Managem",
             f"Période analysée : {params['mois']} {params['annee']}",
             f"Date de génération : {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            "",
+            "Objectif du rapport :",
+            "Présenter une synthèse claire des KPI maintenance, des arrêts, des équipements pénalisants",
+            "et des axes prioritaires d'amélioration.",
             "",
             "KPI principaux :",
             f"TRS : {format_pct(kpis['trs'])}",
             f"Disponibilité maintenance : {format_pct(kpis['disponibilite'])}",
             f"MTBF : {format_h(kpis['mtbf'])}",
             f"MTTR : {format_h(kpis['mttr'])}",
-        ])
+        ]
+        add_pdf_text_page(pdf, "Rapport KPI des arrêts - Managem", cover_lines)
 
+        # Page 2 : résumé exécutif
         summary = generate_executive_summary(kpis)
-        lines = [f"{i}. {msg}" for i, msg in enumerate(summary, 1)]
+        lines = []
+        for i, msg in enumerate(summary, 1):
+            lines.append(f"{i}. {msg}")
+
         lines.extend([
             "",
             "Synthèse chiffrée :",
@@ -943,28 +901,39 @@ def generate_pdf_report(kpis, params):
         ])
         add_pdf_text_page(pdf, "Résumé exécutif", lines)
 
+        # Page 3 : bloc KPI
         add_pdf_table_page(pdf, "Bloc KPI détaillé", kpis["bloc_kpi"], max_rows=20)
+
+        # Page 4 : maintenance
         add_pdf_table_page(pdf, "Synthèse maintenance", kpis["rep_maintenance_final"], max_rows=10)
 
+        # Page 5 : zones
         fig_zone = make_pdf_bar_plot(kpis["rep_zone"], "Zone", "Duree_h", "Répartition des arrêts par zone", top_n=12)
         pdf.savefig(fig_zone, bbox_inches="tight")
         plt.close(fig_zone)
 
+        # Page 6 : top équipements
         fig_eq = make_pdf_bar_plot(kpis["top_equipements"], "Equipement", "Duree_h", "Top équipements pénalisants", top_n=10)
         pdf.savefig(fig_eq, bbox_inches="tight")
         plt.close(fig_eq)
 
+        # Page 7 : pareto
         fig_pareto = make_pdf_pareto_plot(kpis["pareto_tag"])
         pdf.savefig(fig_pareto, bbox_inches="tight")
         plt.close(fig_pareto)
 
+        # Page 8 : évolution journalière
         fig_daily = make_pdf_daily_plot(kpis["journalier"])
         pdf.savefig(fig_daily, bbox_inches="tight")
         plt.close(fig_daily)
 
-        add_pdf_text_page(pdf, "Conclusion et recommandations", [
+        # Page 9 : conclusion
+        conclusion_lines = [
+            "Conclusion automatique :",
+            "",
             "Ce rapport met en évidence les KPI principaux de performance et de maintenance.",
             "L'analyse Pareto permet d'identifier les équipements qui contribuent le plus aux pertes.",
+            "La priorité d'amélioration doit être donnée aux équipements ayant les durées d'arrêt les plus élevées.",
             "",
             "Recommandations générales :",
             "1. Suivre mensuellement l'évolution du TRS, MTBF et MTTR.",
@@ -972,51 +941,33 @@ def generate_pdf_report(kpis, params):
             "3. Analyser les arrêts longs et récurrents.",
             "4. Mettre en place un plan d'action maintenance ciblé par zone et par équipement.",
             "5. Utiliser cette plateforme comme outil de suivi mensuel standardisé."
-        ])
+        ]
+        add_pdf_text_page(pdf, "Conclusion et recommandations", conclusion_lines)
 
     buffer.seek(0)
     return buffer.getvalue()
 
 
 # =========================================================
-# HEADER PROFESSIONNEL
+# HEADER
 # =========================================================
-
-import base64
-
-logo_html = ""
-
 if LOGO_PATH.exists():
-    with open(LOGO_PATH, "rb") as img_file:
-        encoded_logo = base64.b64encode(img_file.read()).decode()
+    st.markdown('<div class="logo-box">', unsafe_allow_html=True)
+    col_logo1, col_logo2, col_logo3 = st.columns([0.1, 4.8, 0.1])
+    with col_logo2:
+        st.image(str(LOGO_PATH), width=700)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    logo_html = f"""
-    <img 
-        src="data:image/png;base64,{encoded_logo}" 
-        style="width:260px; height:auto; object-fit:contain;"
-    >
-    """
+st.markdown("""
+<div class="hero-box">
+    <h1 style='text-align: center; margin-bottom: 0.2rem;'>Tableau de bord des arrêts</h1>
+    <p style='text-align: center; color: #9eb8d6; margin-top: 0; margin-bottom: 0.2rem;'>
+        Plateforme KPI maintenance - Managem
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
-st.markdown(
-    f"""
-    <div class="top-header">
-        <div class="header-content">
-            <div class="header-left">
-                {logo_html}
-                <div class="header-title-block">
-                    <div class="header-title">Tableau de bord des arrêts</div>
-                    <div class="header-subtitle">Plateforme KPI maintenance - Groupe Managem</div>
-                </div>
-            </div>
-            <div class="header-site">
-                <div class="header-site-label">Site industriel</div>
-                <div class="header-site-value">SITE TIZERT</div>
-            </div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+
 # =========================================================
 # SIDEBAR
 # =========================================================
@@ -1069,8 +1020,8 @@ if uploaded_file is None:
     <div class="executive-box">
         <h3>Objectif de la plateforme</h3>
         <p>
-        Cette application transforme automatiquement une base brute mensuelle des arrêts
-        en tableau de bord KPI maintenance avec analyses, graphiques et rapport PDF professionnel.
+        Cette application permet de transformer automatiquement une base brute mensuelle des arrêts
+        en tableau de bord KPI maintenance avec analyses, graphiques et rapport PDF.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -1202,12 +1153,12 @@ if page == "Dashboard principal":
                 int(rep.loc[rep["Categorie"] == "Instrumentation", "Nb_arrets"].iloc[0]),
                 int(rep.loc[rep["Categorie"] == "Automatique", "Nb_arrets"].iloc[0]),
             ],
-            "Part maintenance (%)": [
+            "Part (%)": [
                 100.0 if kpis["maintenance_total_h"] > 0 else 0.0,
-                float(rep.loc[rep["Categorie"] == "Mécanique", "Part maintenance (%)"].iloc[0]),
-                float(rep.loc[rep["Categorie"] == "Electrique", "Part maintenance (%)"].iloc[0]),
-                float(rep.loc[rep["Categorie"] == "Instrumentation", "Part maintenance (%)"].iloc[0]),
-                float(rep.loc[rep["Categorie"] == "Automatique", "Part maintenance (%)"].iloc[0]),
+                float(rep.loc[rep["Categorie"] == "Mécanique", "Pct"].iloc[0]),
+                float(rep.loc[rep["Categorie"] == "Electrique", "Pct"].iloc[0]),
+                float(rep.loc[rep["Categorie"] == "Instrumentation", "Pct"].iloc[0]),
+                float(rep.loc[rep["Categorie"] == "Automatique", "Pct"].iloc[0]),
             ]
         })
 
