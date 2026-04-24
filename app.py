@@ -1,8 +1,8 @@
 import io
-from pathlib import Path
 import math
-from datetime import datetime
 import base64
+from pathlib import Path
+from datetime import datetime
 
 import pandas as pd
 import streamlit as st
@@ -13,7 +13,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 st.set_page_config(
     page_title="Dashboard Arrêts - Site Tizert",
-    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -21,231 +20,69 @@ st.set_page_config(
 LOGO_PATH = Path("logoo_v2.png")
 
 
-# =========================================================
-# STYLE GLOBAL
-# =========================================================
 st.markdown("""
 <style>
-.stApp {
-    background: #000000 !important;
-    color: #e5eefc !important;
-}
-
-header[data-testid="stHeader"],
-div[data-testid="stToolbar"],
-div[data-testid="stDecoration"] {
-    display: none !important;
-}
-
-section[data-testid="stSidebar"] {
-    background: #050505 !important;
-    border-right: 1px solid rgba(242, 178, 51, 0.20);
-}
-
-html, body, [class*="css"], [data-testid="stAppViewContainer"] {
-    color: #e5eefc !important;
-}
-
-.block-container {
-    padding-top: 0.7rem !important;
-    padding-bottom: 1.5rem !important;
-    max-width: 1550px;
-}
-
-h1, h2, h3, h4, h5, h6, p, label, span, div {
-    color: #e5eefc !important;
-}
+.stApp { background:#000000 !important; color:#e5eefc !important; }
+header[data-testid="stHeader"], div[data-testid="stToolbar"], div[data-testid="stDecoration"] { display:none !important; }
+section[data-testid="stSidebar"] { background:#050505 !important; border-right:1px solid rgba(242,178,51,.20); }
+.block-container { padding-top:.7rem !important; max-width:1550px; }
+h1,h2,h3,h4,h5,h6,p,label,span,div { color:#e5eefc !important; }
 
 .main-header {
-    background: #000000;
-    border: 1px solid rgba(242, 178, 51, 0.32);
-    border-radius: 28px;
-    padding: 34px 40px 38px 40px;
-    margin-bottom: 28px;
-    text-align: center;
-    box-shadow: 0px 14px 34px rgba(0, 0, 0, 0.45);
+    background:#000000; border:1px solid rgba(242,178,51,.32); border-radius:28px;
+    padding:34px 40px 38px 40px; margin-bottom:28px; text-align:center;
 }
+.logo-center { display:flex; justify-content:center; align-items:center; margin-bottom:18px; }
+.main-logo { width:520px; max-width:90%; height:auto; border-radius:18px; }
+.header-title-center { font-size:3.1rem; font-weight:850; color:#f3f8ff !important; }
+.header-subtitle-center { font-size:1.15rem; color:#a8a69c !important; margin-top:12px; font-weight:600; }
+.site-tizert { margin-top:18px; font-size:1.8rem; font-weight:850; color:#f2b233 !important; letter-spacing:.08em; }
 
-.logo-center {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 18px;
+.custom-card, .executive-box {
+    background:#050505; border:1px solid rgba(242,178,51,.18); border-radius:18px;
+    padding:17px 19px; box-shadow:0 8px 24px rgba(0,0,0,.35); margin-bottom:12px;
 }
+.card-title { font-size:.95rem; color:#c7b27a !important; font-weight:700; margin-bottom:6px; }
+.card-value { font-size:1.75rem; font-weight:850; color:#ffffff !important; line-height:1.1; }
+.card-sub { font-size:.82rem; color:#9ca8bb !important; margin-top:6px; }
 
-.main-logo {
-    width: 520px;
-    max-width: 90%;
-    height: auto;
-    object-fit: contain;
-    border-radius: 18px;
-    background: transparent;
-}
-
-.header-title-center {
-    font-size: 3.1rem;
-    font-weight: 850;
-    color: #f3f8ff !important;
-    line-height: 1.08;
-    margin-top: 4px;
-}
-
-.header-subtitle-center {
-    font-size: 1.15rem;
-    color: #a8a69c !important;
-    margin-top: 12px;
-    font-weight: 600;
-}
-
-.site-tizert {
-    margin-top: 18px;
-    font-size: 1.8rem;
-    font-weight: 850;
-    color: #f2b233 !important;
-    letter-spacing: 0.08em;
-}
-
-.custom-card {
-    background: #050505;
-    border: 1px solid rgba(242, 178, 51, 0.18);
-    border-radius: 18px;
-    padding: 17px 19px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-    margin-bottom: 12px;
-}
-
-.card-title {
-    font-size: 0.95rem;
-    color: #c7b27a !important;
-    font-weight: 700;
-    margin-bottom: 6px;
-}
-
-.card-value {
-    font-size: 1.75rem;
-    font-weight: 850;
-    color: #ffffff !important;
-    line-height: 1.1;
-}
-
-.card-sub {
-    font-size: 0.82rem;
-    color: #9ca8bb !important;
-    margin-top: 6px;
-}
-
-.executive-box {
-    background: #050505;
-    border: 1px solid rgba(242, 178, 51, 0.18);
-    border-radius: 18px;
-    padding: 18px 20px;
-    margin-bottom: 16px;
-    box-shadow: 0px 8px 22px rgba(0, 0, 0, 0.35);
-}
-
-.alert-box {
-    background: #050505;
-    border-left: 5px solid #f2b233;
-    border-radius: 14px;
-    padding: 14px 18px;
-    margin-bottom: 10px;
-}
-
-.danger-box {
-    background: #100505;
-    border-left: 5px solid #f36c72;
-    border-radius: 14px;
-    padding: 14px 18px;
-    margin-bottom: 10px;
-}
-
-.success-box {
-    background: #061009;
-    border-left: 5px solid #5ee08a;
-    border-radius: 14px;
-    padding: 14px 18px;
-    margin-bottom: 10px;
-}
+.alert-box { background:#050505; border-left:5px solid #f2b233; border-radius:14px; padding:14px 18px; margin-bottom:10px; }
+.danger-box { background:#100505; border-left:5px solid #f36c72; border-radius:14px; padding:14px 18px; margin-bottom:10px; }
+.success-box { background:#061009; border-left:5px solid #5ee08a; border-radius:14px; padding:14px 18px; margin-bottom:10px; }
 
 .section-chip {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(242, 178, 51, 0.12);
-    color: #f2b233 !important;
-    border: 1px solid rgba(242, 178, 51, 0.18);
-    font-size: 0.8rem;
-    font-weight: 800;
-    margin-bottom: 12px;
+    display:inline-block; padding:6px 12px; border-radius:999px;
+    background:rgba(242,178,51,.12); color:#f2b233 !important;
+    border:1px solid rgba(242,178,51,.18); font-size:.8rem; font-weight:800; margin-bottom:12px;
 }
 
-input, textarea {
-    background-color: #111111 !important;
-    color: #ffffff !important;
-    border-radius: 10px !important;
-}
-
+input, textarea { background-color:#111111 !important; color:#ffffff !important; border-radius:10px !important; }
 div[data-baseweb="select"] > div {
-    background-color: #111111 !important;
-    color: #ffffff !important;
-    border-radius: 10px !important;
-    border: 1px solid rgba(242, 178, 51, 0.14) !important;
+    background-color:#111111 !important; color:#ffffff !important; border-radius:10px !important;
+    border:1px solid rgba(242,178,51,.14) !important;
 }
-
 section[data-testid="stFileUploader"] {
-    background: #111111 !important;
-    border: 1px solid rgba(242, 178, 51, 0.14) !important;
-    border-radius: 14px !important;
-    padding: 10px !important;
+    background:#111111 !important; border:1px solid rgba(242,178,51,.14) !important;
+    border-radius:14px !important; padding:10px !important;
 }
-
 div[data-testid="stDataFrame"] {
-    background: #050505 !important;
-    border-radius: 14px !important;
-    border: 1px solid rgba(242, 178, 51, 0.12) !important;
-    overflow: hidden !important;
+    background:#050505 !important; border-radius:14px !important;
+    border:1px solid rgba(242,178,51,.12) !important; overflow:hidden !important;
 }
-
-button {
-    border-radius: 10px !important;
+button { border-radius:10px !important; }
+div.stDownloadButton button, div.stButton button {
+    background:linear-gradient(90deg,#d99721 0%,#f2b233 100%) !important;
+    color:#08101f !important; border:none !important; font-weight:800 !important;
 }
-
-div.stDownloadButton button,
-div.stButton button {
-    background: linear-gradient(90deg, #d99721 0%, #f2b233 100%) !important;
-    color: #08101f !important;
-    border: none !important;
-    font-weight: 800 !important;
-    box-shadow: 0 6px 18px rgba(242, 178, 51, 0.18);
-}
-
 div[role="radiogroup"] > label {
-    background: #111111 !important;
-    border-radius: 10px !important;
-    padding: 8px 10px !important;
-    margin-bottom: 6px !important;
-    border: 1px solid rgba(242, 178, 51, 0.08);
+    background:#111111 !important; border-radius:10px !important; padding:8px 10px !important;
+    margin-bottom:6px !important; border:1px solid rgba(242,178,51,.08);
 }
-
-hr {
-    border: 1px solid rgba(242, 178, 51, 0.18) !important;
-}
-
-@media (max-width: 950px) {
-    .main-logo {
-        width: 330px;
-    }
-    .header-title-center {
-        font-size: 2rem;
-    }
-}
+@media(max-width:950px){ .main-logo{width:330px;} .header-title-center{font-size:2rem;} }
 </style>
 """, unsafe_allow_html=True)
 
 
-# =========================================================
-# OUTILS
-# =========================================================
 def get_logo_base64(path):
     if path.exists():
         with open(path, "rb") as f:
@@ -266,20 +103,16 @@ def lower_text(value):
 def duration_to_hours(value):
     if pd.isna(value):
         return 0.0
-
     if isinstance(value, pd.Timedelta):
         return value.total_seconds() / 3600
-
     if hasattr(value, "hour") and hasattr(value, "minute"):
         return value.hour + value.minute / 60 + getattr(value, "second", 0) / 3600
-
     if isinstance(value, (int, float)):
         val = float(value)
         return val * 24 if val <= 1.5 else val
-
     if isinstance(value, str):
         txt = value.strip().replace(",", ".")
-        if txt == "":
+        if not txt:
             return 0.0
         try:
             if ":" in txt:
@@ -291,7 +124,6 @@ def duration_to_hours(value):
             return float(txt)
         except Exception:
             return 0.0
-
     return 0.0
 
 
@@ -302,10 +134,10 @@ def clean_columns(df):
 
 
 def to_hhmmss(hours):
-    total_seconds = int(round(float(hours) * 3600)) if not pd.isna(hours) else 0
-    h = total_seconds // 3600
-    m = (total_seconds % 3600) // 60
-    s = total_seconds % 60
+    total = int(round(float(hours) * 3600)) if not pd.isna(hours) else 0
+    h = total // 3600
+    m = (total % 3600) // 60
+    s = total % 60
     return f"{h:02d}:{m:02d}:{s:02d}"
 
 
@@ -346,19 +178,15 @@ def priority_from_duration(duree_h, total_h):
 def action_recommendation(row):
     duree = float(row.get("Duree_h", 0))
     nb = int(row.get("Nb_arrets", 0)) if "Nb_arrets" in row else 0
-
     if nb >= 5 and duree >= 10:
         return "Analyser la récurrence, contrôler les organes critiques et planifier une action de fiabilisation."
     if duree >= 10:
         return "Analyser l'arrêt long, vérifier les causes racines et préparer une action corrective ciblée."
     if nb >= 5:
-        return "Traiter la répétitivité des arrêts par inspection préventive et standardisation des interventions."
+        return "Traiter la répétitivité par inspection préventive et standardisation des interventions."
     return "Suivre l'équipement et vérifier si l'arrêt se répète sur les prochains mois."
 
 
-# =========================================================
-# CHARGEMENT DES DONNÉES
-# =========================================================
 def load_raw_data(uploaded_file, sheet_name=None):
     suffix = Path(uploaded_file.name).suffix.lower()
 
@@ -372,15 +200,8 @@ def load_raw_data(uploaded_file, sheet_name=None):
     df = clean_columns(df)
 
     required_columns = [
-        "Date",
-        "Zone",
-        "TAG",
-        "Equipement",
-        "Imputation arrêt",
-        "Durée (H)",
-        "Description Arrêt",
-        "Type de panne",
-        "Usine en arret/marche"
+        "Date", "Zone", "TAG", "Equipement", "Imputation arrêt",
+        "Durée (H)", "Description Arrêt", "Type de panne", "Usine en arret/marche"
     ]
 
     optional_columns = ["Famille", "Causes majeures"]
@@ -401,9 +222,8 @@ def prepare_data(df):
         df["Date"] = pd.to_datetime(df["Date"], errors="coerce", dayfirst=True)
 
     text_cols = [
-        "Zone", "Famille", "TAG", "Equipement",
-        "Imputation arrêt", "Description Arrêt",
-        "Type de panne", "Causes majeures", "Usine en arret/marche"
+        "Zone", "Famille", "TAG", "Equipement", "Imputation arrêt",
+        "Description Arrêt", "Type de panne", "Causes majeures", "Usine en arret/marche"
     ]
 
     for col in text_cols:
@@ -411,13 +231,9 @@ def prepare_data(df):
             df[col] = df[col].apply(normalize_text)
 
     df["Duree_h"] = df["Durée (H)"].apply(duration_to_hours) if "Durée (H)" in df.columns else 0.0
-
     return df
 
 
-# =========================================================
-# CLASSIFICATION
-# =========================================================
 def classify_planned(row):
     return "plan" in lower_text(row.get("Imputation arrêt", ""))
 
@@ -448,9 +264,6 @@ def maintenance_category(text):
     return "Autre"
 
 
-# =========================================================
-# CALCUL KPI
-# =========================================================
 def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_realise, taux_qualite):
     data = df.copy()
 
@@ -597,9 +410,6 @@ def compute_kpis(df, annee, mois, temps_ouverture, cadence_theorique, tonnage_re
     }
 
 
-# =========================================================
-# ANALYSE AUTOMATIQUE
-# =========================================================
 def generate_executive_summary(kpis):
     messages = []
 
@@ -664,9 +474,6 @@ def generate_alerts(kpis, obj_trs, obj_dispo, seuil_mttr, seuil_mtbf):
     return alerts
 
 
-# =========================================================
-# VISUELS
-# =========================================================
 def draw_availability_gauge(value):
     fig, ax = plt.subplots(figsize=(6.2, 3.2), facecolor="#000000")
     ax.set_facecolor("#000000")
@@ -774,13 +581,8 @@ def make_dark_pie_plot(df, label_col, value_col, title):
         ax.axis("off")
         return fig
 
-    ax.pie(
-        plot_df[value_col],
-        labels=plot_df[label_col],
-        autopct="%1.1f%%",
-        startangle=90,
-        textprops={"color": "white", "fontsize": 9}
-    )
+    ax.pie(plot_df[value_col], labels=plot_df[label_col], autopct="%1.1f%%", startangle=90,
+           textprops={"color": "white", "fontsize": 9})
     ax.set_title(title, color="white", fontsize=13, fontweight="bold", pad=12)
     return fig
 
@@ -810,9 +612,6 @@ def make_comparison_bar(comp_df, title):
     return fig
 
 
-# =========================================================
-# PDF
-# =========================================================
 def add_pdf_text_page(pdf, title, lines):
     fig = plt.figure(figsize=(11.69, 8.27))
     fig.patch.set_facecolor("white")
@@ -914,50 +713,105 @@ def generate_pdf_report(kpis, params, alerts):
     buffer = io.BytesIO()
 
     with PdfPages(buffer) as pdf:
-        add_pdf_text_page(pdf, "Rapport KPI des arrêts - Managem", [
-            "Rapport automatique généré par la plateforme Dashboard Arrêts - Managem.",
-            "Site : Tizert",
-            f"Période analysée : {params['mois']} {params['annee']}",
-            f"Date de génération : {datetime.now().strftime('%d/%m/%Y %H:%M')}",
-            "",
-            "KPI principaux :",
-            f"TRS : {format_pct(kpis['trs'])}",
-            f"Disponibilité maintenance : {format_pct(kpis['disponibilite'])}",
-            f"MTBF : {format_h(kpis['mtbf'])}",
-            f"MTTR : {format_h(kpis['mttr'])}",
-        ])
+        fig = plt.figure(figsize=(11.69, 8.27))
+        fig.patch.set_facecolor("white")
+        plt.axis("off")
+
+        plt.text(0.5, 0.72, "MANAGEM", ha="center", fontsize=34, fontweight="bold", color="#d99721")
+        plt.text(0.5, 0.55, "RAPPORT KPI DES ARRÊTS", ha="center", fontsize=24, fontweight="bold", color="#111827")
+        plt.text(0.5, 0.48, "Plateforme KPI Maintenance - Groupe Managem", ha="center", fontsize=14, color="#374151")
+        plt.text(0.5, 0.40, "SITE TIZERT", ha="center", fontsize=20, fontweight="bold", color="#d99721")
+        plt.text(0.5, 0.32, f"Période analysée : {params['mois']} {params['annee']}", ha="center", fontsize=13, color="#111827")
+        plt.text(0.5, 0.27, f"Date de génération : {datetime.now().strftime('%d/%m/%Y %H:%M')}", ha="center", fontsize=11, color="#4b5563")
+        plt.text(0.5, 0.12, "Document généré automatiquement par la plateforme Dashboard Arrêts", ha="center", fontsize=10, color="#6b7280")
+        pdf.savefig(fig, bbox_inches="tight")
+        plt.close(fig)
+
+        fig = plt.figure(figsize=(11.69, 8.27))
+        fig.patch.set_facecolor("white")
+        plt.axis("off")
+
+        plt.text(0.05, 0.93, "1. Synthèse des KPI", fontsize=20, fontweight="bold", color="#111827")
+        plt.text(0.05, 0.89, "Site : SITE TIZERT", fontsize=11, color="#374151")
+        plt.text(0.05, 0.86, f"Période : {params['mois']} {params['annee']}", fontsize=11, color="#374151")
+
+        kpi_table = pd.DataFrame({
+            "Indicateur": [
+                "TRS", "Disponibilité maintenance", "MTBF", "MTTR",
+                "Temps requis", "Temps de fonctionnement", "Temps net",
+                "Maintenance totale", "Nombre d'arrêts maintenance"
+            ],
+            "Valeur": [
+                format_pct(kpis["trs"]), format_pct(kpis["disponibilite"]),
+                format_h(kpis["mtbf"]), format_h(kpis["mttr"]),
+                format_h(kpis["temps_requis"]), format_h(kpis["temps_fonctionnement"]),
+                format_h(kpis["temps_net"]), format_h(kpis["maintenance_total_h"]),
+                kpis["maintenance_total_n"]
+            ]
+        })
+
+        ax_table = fig.add_axes([0.08, 0.35, 0.84, 0.42])
+        ax_table.axis("off")
+        table = ax_table.table(cellText=kpi_table.values, colLabels=kpi_table.columns, loc="center", cellLoc="center")
+        table.auto_set_font_size(False)
+        table.set_fontsize(10)
+        table.scale(1, 1.7)
+
+        for (row, col), cell in table.get_celld().items():
+            cell.set_edgecolor("#9ca3af")
+            if row == 0:
+                cell.set_facecolor("#132238")
+                cell.set_text_props(color="white", weight="bold")
+            else:
+                cell.set_facecolor("#f8fafc")
+                cell.set_text_props(color="#111827")
+
+        plt.text(0.05, 0.20, "Lecture rapide : ces indicateurs permettent d’évaluer la performance globale du mois, la disponibilité maintenance et l’impact des arrêts.", fontsize=11, color="#374151", wrap=True)
+        pdf.savefig(fig, bbox_inches="tight")
+        plt.close(fig)
 
         summary = generate_executive_summary(kpis)
-        lines = [f"{i}. {msg}" for i, msg in enumerate(summary, 1)]
-        lines.extend(["", "Alertes KPI :"])
-        lines.extend([f"- {msg}" for _, msg in alerts])
-        lines.extend([
-            "",
-            "Synthèse chiffrée :",
-            f"Temps requis : {format_h(kpis['temps_requis'])}",
-            f"Temps de fonctionnement : {format_h(kpis['temps_fonctionnement'])}",
-            f"Temps net : {format_h(kpis['temps_net'])}",
-            f"Arrêts planifiés : {format_h(kpis['arrets_planifies'])}",
-            f"Temps arrêts non planifiés : {format_h(kpis['temps_arrets_np'])}",
-            f"Maintenance totale : {format_h(kpis['maintenance_total_h'])}",
-            f"Nombre d'arrêts maintenance : {kpis['maintenance_total_n']}",
-        ])
-        add_pdf_text_page(pdf, "Résumé exécutif et alertes", lines)
 
-        add_pdf_table_page(pdf, "Bloc KPI détaillé", kpis["bloc_kpi"], max_rows=20)
-        add_pdf_table_page(pdf, "Synthèse maintenance", kpis["rep_maintenance_final"], max_rows=10)
-        add_pdf_table_page(
-            pdf,
-            "Diagnostic et plan d'action",
-            kpis["equip_diag"][["TAG_Equipement", "Duree_h", "Nb_arrets", "Part_globale_%", "Priorité", "Action recommandée"]],
-            max_rows=10
-        )
+        fig = plt.figure(figsize=(11.69, 8.27))
+        fig.patch.set_facecolor("white")
+        plt.axis("off")
+        plt.text(0.05, 0.93, "2. Résumé exécutif automatique", fontsize=20, fontweight="bold", color="#111827")
 
-        fig_zone = make_pdf_bar_plot(kpis["rep_zone"], "Zone", "Duree_h", "Répartition des arrêts par zone", top_n=12)
+        y = 0.82
+        for i, msg in enumerate(summary, 1):
+            plt.text(0.08, y, f"{i}. {msg}", fontsize=11, color="#111827", wrap=True)
+            y -= 0.08
+
+        plt.text(0.05, y - 0.03, "Alertes KPI", fontsize=16, fontweight="bold", color="#111827")
+        y -= 0.10
+
+        for level, msg in alerts:
+            color = "#b91c1c" if level == "danger" else "#15803d" if level == "success" else "#92400e"
+            plt.text(0.08, y, f"- {msg}", fontsize=11, color=color, wrap=True)
+            y -= 0.06
+
+        pdf.savefig(fig, bbox_inches="tight")
+        plt.close(fig)
+
+        add_pdf_table_page(pdf, "3. Bloc KPI détaillé", kpis["bloc_kpi"], max_rows=20)
+        add_pdf_table_page(pdf, "4. Synthèse maintenance", kpis["rep_maintenance_final"], max_rows=10)
+
+        diag_pdf = kpis["equip_diag"][
+            ["TAG_Equipement", "Duree_h", "Nb_arrets", "Part_globale_%", "Priorité", "Action recommandée"]
+        ].head(10).rename(columns={
+            "TAG_Equipement": "TAG | Equipement",
+            "Duree_h": "Durée (h)",
+            "Nb_arrets": "Nb arrêts",
+            "Part_globale_%": "Part (%)"
+        })
+
+        add_pdf_table_page(pdf, "5. Diagnostic et plan d'action", diag_pdf, max_rows=10)
+
+        fig_zone = make_pdf_bar_plot(kpis["rep_zone"], "Zone", "Duree_h", "6. Répartition des arrêts par zone", top_n=12)
         pdf.savefig(fig_zone, bbox_inches="tight")
         plt.close(fig_zone)
 
-        fig_eq = make_pdf_bar_plot(kpis["top_equipements"], "Equipement", "Duree_h", "Top équipements pénalisants", top_n=10)
+        fig_eq = make_pdf_bar_plot(kpis["top_equipements"], "Equipement", "Duree_h", "7. Top équipements pénalisants", top_n=10)
         pdf.savefig(fig_eq, bbox_inches="tight")
         plt.close(fig_eq)
 
@@ -969,27 +823,33 @@ def generate_pdf_report(kpis, params, alerts):
         pdf.savefig(fig_daily, bbox_inches="tight")
         plt.close(fig_daily)
 
-        add_pdf_text_page(pdf, "Conclusion et recommandations", [
+        fig = plt.figure(figsize=(11.69, 8.27))
+        fig.patch.set_facecolor("white")
+        plt.axis("off")
+        plt.text(0.05, 0.93, "8. Conclusion et recommandations", fontsize=20, fontweight="bold", color="#111827")
+
+        conclusions = [
             "Ce rapport met en évidence les KPI principaux de performance et de maintenance.",
-            "L'analyse Pareto permet d'identifier les équipements qui contribuent le plus aux pertes.",
-            "",
-            "Recommandations générales :",
-            "1. Suivre mensuellement l'évolution du TRS, MTBF et MTTR.",
-            "2. Prioriser les équipements du Pareto pour les actions de fiabilisation.",
-            "3. Analyser les arrêts longs et récurrents.",
-            "4. Mettre en place un plan d'action maintenance ciblé par zone et par équipement.",
-            "5. Utiliser cette plateforme comme outil de suivi mensuel standardisé."
-        ])
+            "Le Pareto par TAG | Equipement permet d’identifier les équipements les plus pénalisants.",
+            "Les priorités d’action permettent d’orienter les interventions vers les équipements à fort impact.",
+            "Les alertes KPI dépendent des seuils saisis par l’utilisateur et ne sont pas des valeurs imposées.",
+            "La plateforme peut être utilisée comme support de suivi mensuel standardisé pour le site Tizert."
+        ]
+
+        y = 0.82
+        for i, line in enumerate(conclusions, 1):
+            plt.text(0.08, y, f"{i}. {line}", fontsize=12, color="#111827", wrap=True)
+            y -= 0.08
+
+        plt.text(0.05, 0.25, "Recommandation générale : prioriser les équipements critiques, analyser les arrêts longs et suivre mensuellement l’évolution du TRS, de la disponibilité, du MTBF et du MTTR.", fontsize=12, color="#374151", wrap=True)
+        pdf.savefig(fig, bbox_inches="tight")
+        plt.close(fig)
 
     buffer.seek(0)
     return buffer.getvalue()
 
 
-# =========================================================
-# HEADER
-# =========================================================
 logo_base64 = get_logo_base64(LOGO_PATH)
-
 if logo_base64:
     logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="main-logo">'
 else:
@@ -997,25 +857,14 @@ else:
 
 st.markdown(f"""
 <div class="main-header">
-    <div class="logo-center">
-        {logo_html}
-    </div>
-    <div class="header-title-center">
-        Tableau de bord des arrêts
-    </div>
-    <div class="header-subtitle-center">
-        Plateforme KPI maintenance - Groupe Managem
-    </div>
-    <div class="site-tizert">
-        SITE TIZERT
-    </div>
+    <div class="logo-center">{logo_html}</div>
+    <div class="header-title-center">Tableau de bord des arrêts</div>
+    <div class="header-subtitle-center">Plateforme KPI maintenance - Groupe Managem</div>
+    <div class="site-tizert">SITE TIZERT</div>
 </div>
 """, unsafe_allow_html=True)
 
 
-# =========================================================
-# SIDEBAR
-# =========================================================
 page = st.sidebar.radio(
     "Navigation",
     [
@@ -1028,10 +877,7 @@ page = st.sidebar.radio(
     ]
 )
 
-uploaded_file = st.sidebar.file_uploader(
-    "Importer le fichier des arrêts",
-    type=["xlsx", "csv"]
-)
+uploaded_file = st.sidebar.file_uploader("Importer le fichier des arrêts", type=["xlsx", "csv"])
 
 sheet_name = None
 if uploaded_file is not None and Path(uploaded_file.name).suffix.lower() != ".csv":
@@ -1049,10 +895,7 @@ annee = st.sidebar.number_input("Année", min_value=2000, max_value=2100, value=
 
 mois = st.sidebar.selectbox(
     "Mois",
-    [
-        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-    ],
+    ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"],
     index=1
 )
 
@@ -1071,12 +914,8 @@ seuil_mttr = st.sidebar.number_input("Saisir le seuil MTTR max acceptable (h)", 
 seuil_mtbf = st.sidebar.number_input("Saisir le seuil MTBF min acceptable (h)", min_value=0.0, value=0.0, step=1.0)
 
 
-# =========================================================
-# PAGE COMPARAISON MENSUELLE
-# =========================================================
 if page == "Comparaison mensuelle":
     st.markdown('<div class="section-chip">Comparaison mensuelle</div>', unsafe_allow_html=True)
-
     st.subheader("Importer deux fichiers mensuels à comparer")
 
     c_file1, c_file2 = st.columns(2)
@@ -1122,42 +961,24 @@ if page == "Comparaison mensuelle":
 
     comparison = pd.DataFrame({
         "Indicateur": [
-            "TRS (%)",
-            "Disponibilité (%)",
-            "MTBF (h)",
-            "MTTR (h)",
-            "Maintenance totale (h)",
-            "Nombre arrêts maintenance",
-            "Arrêts planifiés (h)",
-            "Arrêts non planifiés (h)"
+            "TRS (%)", "Disponibilité (%)", "MTBF (h)", "MTTR (h)",
+            "Maintenance totale (h)", "Nombre arrêts maintenance",
+            "Arrêts planifiés (h)", "Arrêts non planifiés (h)"
         ],
         nom_m1: [
-            k1["trs"],
-            k1["disponibilite"],
-            k1["mtbf"],
-            k1["mttr"],
-            k1["maintenance_total_h"],
-            k1["maintenance_total_n"],
-            k1["arrets_planifies"],
-            k1["temps_arrets_np"]
+            k1["trs"], k1["disponibilite"], k1["mtbf"], k1["mttr"],
+            k1["maintenance_total_h"], k1["maintenance_total_n"],
+            k1["arrets_planifies"], k1["temps_arrets_np"]
         ],
         nom_m2: [
-            k2["trs"],
-            k2["disponibilite"],
-            k2["mtbf"],
-            k2["mttr"],
-            k2["maintenance_total_h"],
-            k2["maintenance_total_n"],
-            k2["arrets_planifies"],
-            k2["temps_arrets_np"]
+            k2["trs"], k2["disponibilite"], k2["mtbf"], k2["mttr"],
+            k2["maintenance_total_h"], k2["maintenance_total_n"],
+            k2["arrets_planifies"], k2["temps_arrets_np"]
         ]
     })
 
     comparison["Écart"] = comparison[nom_m2] - comparison[nom_m1]
-    comparison["Évolution (%)"] = comparison.apply(
-        lambda r: round((r["Écart"] / r[nom_m1] * 100), 2) if r[nom_m1] != 0 else 0,
-        axis=1
-    )
+    comparison["Évolution (%)"] = comparison.apply(lambda r: round((r["Écart"] / r[nom_m1] * 100), 2) if r[nom_m1] != 0 else 0, axis=1)
 
     st.subheader("Tableau comparatif KPI")
     st.dataframe(comparison, use_container_width=True, height=320)
@@ -1167,7 +988,6 @@ if page == "Comparaison mensuelle":
     st.pyplot(fig_comp, use_container_width=True)
 
     st.subheader("Conclusion automatique de comparaison")
-
     messages_comp = []
 
     if k2["trs"] > k1["trs"]:
@@ -1197,18 +1017,15 @@ if page == "Comparaison mensuelle":
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.subheader("Comparaison par zone")
-
     zone1 = k1["rep_zone"].rename(columns={"Duree_h": nom_m1})
     zone2 = k2["rep_zone"].rename(columns={"Duree_h": nom_m2})
     zone_comp = pd.merge(zone1, zone2, on="Zone", how="outer").fillna(0)
     zone_comp["Écart"] = zone_comp[nom_m2] - zone_comp[nom_m1]
-
     st.dataframe(zone_comp, use_container_width=True, height=300)
 
     fig_zone_comp, ax = plt.subplots(figsize=(11, 5), facecolor="#000000")
     fig_zone_comp.patch.set_facecolor("#000000")
     ax.set_facecolor("#000000")
-
     zone_plot = zone_comp.sort_values("Écart", ascending=False).head(10)
     ax.bar(zone_plot["Zone"].astype(str), zone_plot["Écart"], color="#f2b233")
     ax.set_title("Écart de durée d'arrêt par zone", color="white", fontsize=13, fontweight="bold")
@@ -1219,21 +1036,16 @@ if page == "Comparaison mensuelle":
     st.pyplot(fig_zone_comp, use_container_width=True)
 
     st.subheader("Comparaison des équipements critiques")
-
     eq1 = k1["top_equipements"].rename(columns={"Duree_h": nom_m1})
     eq2 = k2["top_equipements"].rename(columns={"Duree_h": nom_m2})
     eq_comp = pd.merge(eq1, eq2, on="Equipement", how="outer").fillna(0)
     eq_comp["Écart"] = eq_comp[nom_m2] - eq_comp[nom_m1]
     eq_comp = eq_comp.sort_values("Écart", ascending=False)
-
     st.dataframe(eq_comp, use_container_width=True, height=320)
 
     st.stop()
 
 
-# =========================================================
-# SI PAS DE FICHIER POUR LES AUTRES PAGES
-# =========================================================
 if uploaded_file is None:
     st.info("Importez le fichier brut des arrêts depuis la barre latérale pour générer le dashboard.")
     st.markdown("""
@@ -1299,16 +1111,7 @@ if "Date" in df_filtered.columns and df_filtered["Date"].notna().any():
             (df_filtered["Date"].dt.date <= end_date)
         ]
 
-kpis = compute_kpis(
-    df_filtered,
-    annee=annee,
-    mois=mois,
-    temps_ouverture=temps_ouverture,
-    cadence_theorique=cadence_theorique,
-    tonnage_realise=tonnage_realise,
-    taux_qualite=taux_qualite
-)
-
+kpis = compute_kpis(df_filtered, annee, mois, temps_ouverture, cadence_theorique, tonnage_realise, taux_qualite)
 alerts = generate_alerts(kpis, obj_trs, obj_dispo, seuil_mttr, seuil_mtbf)
 
 params = {
@@ -1321,17 +1124,12 @@ params = {
 }
 
 
-# =========================================================
-# PAGES
-# =========================================================
 if page == "Dashboard principal":
     st.markdown('<div class="section-chip">Vue générale</div>', unsafe_allow_html=True)
 
-    summary_lines = generate_executive_summary(kpis)
-
     st.markdown('<div class="executive-box">', unsafe_allow_html=True)
     st.subheader("Résumé exécutif automatique")
-    for msg in summary_lines:
+    for msg in generate_executive_summary(kpis):
         st.write(f"- {msg}")
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -1351,8 +1149,6 @@ if page == "Dashboard principal":
     with m4:
         render_info_card("MTTR", f"{kpis['mttr']} h", "Seuil saisi" if seuil_mttr > 0 else "Aucun seuil saisi")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
     t1, t2 = st.columns([1.2, 1.1], gap="large")
 
     with t1:
@@ -1361,7 +1157,6 @@ if page == "Dashboard principal":
 
     with t2:
         st.subheader("Synthèse maintenance")
-
         rep = kpis["rep_maintenance_final"]
 
         synthese = pd.DataFrame({
@@ -1392,7 +1187,6 @@ if page == "Dashboard principal":
         st.dataframe(synthese, use_container_width=True, height=330)
 
         pdf_bytes = generate_pdf_report(kpis, params, alerts)
-
         st.download_button(
             "Télécharger le rapport PDF",
             data=pdf_bytes,
@@ -1400,47 +1194,41 @@ if page == "Dashboard principal":
             mime="application/pdf"
         )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
     g1, g2 = st.columns([1.15, 1], gap="large")
 
     with g1:
         st.subheader("Répartition des arrêts maintenance")
-        fig_col = draw_maintenance_columns(kpis["rep_maintenance_final"], kpis["maintenance_total_h"])
-        st.pyplot(fig_col, use_container_width=True)
+        st.pyplot(draw_maintenance_columns(kpis["rep_maintenance_final"], kpis["maintenance_total_h"]), use_container_width=True)
 
     with g2:
         st.subheader("Disponibilité maintenance")
-        fig_g = draw_availability_gauge(kpis["disponibilite"])
-        st.pyplot(fig_g, use_container_width=True)
+        st.pyplot(draw_availability_gauge(kpis["disponibilite"]), use_container_width=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
     st.subheader("Analyses rapides du mois")
 
     c1, c2 = st.columns(2, gap="large")
 
     with c1:
         st.markdown("#### Top 5 équipements critiques")
-        fig_top5 = make_dark_bar_plot(
-            kpis["top_equipements"].head(5),
-            x_col="Equipement",
-            y_col="Duree_h",
-            title="Top 5 équipements par durée d'arrêt",
-            xlabel="Equipement",
-            ylabel="Durée (h)",
-            rotation=25
+        st.pyplot(
+            make_dark_bar_plot(
+                kpis["top_equipements"].head(5),
+                "Equipement",
+                "Duree_h",
+                "Top 5 équipements par durée d'arrêt",
+                "Equipement",
+                "Durée (h)",
+                25
+            ),
+            use_container_width=True
         )
-        st.pyplot(fig_top5, use_container_width=True)
 
     with c2:
         st.markdown("#### Répartition des types d'arrêts")
-        fig_type = make_dark_pie_plot(
-            kpis["repartition_type"],
-            label_col="Type",
-            value_col="Durée_h",
-            title="Répartition globale des arrêts"
+        st.pyplot(
+            make_dark_pie_plot(kpis["repartition_type"], "Type", "Durée_h", "Répartition globale des arrêts"),
+            use_container_width=True
         )
-        st.pyplot(fig_type, use_container_width=True)
 
 
 elif page == "Analyses complémentaires":
@@ -1450,31 +1238,11 @@ elif page == "Analyses complémentaires":
 
     with col1:
         st.subheader("Répartition par zone")
-        fig_zone = make_dark_bar_plot(
-            kpis["rep_zone"],
-            x_col="Zone",
-            y_col="Duree_h",
-            title="Durée d'arrêt par zone",
-            xlabel="Zone",
-            ylabel="Durée (h)",
-            rotation=25,
-            top_n=12
-        )
-        st.pyplot(fig_zone, use_container_width=True)
+        st.pyplot(make_dark_bar_plot(kpis["rep_zone"], "Zone", "Duree_h", "Durée d'arrêt par zone", "Zone", "Durée (h)", 25, 12), use_container_width=True)
 
     with col2:
         st.subheader("Top équipements")
-        fig_top = make_dark_bar_plot(
-            kpis["top_equipements"],
-            x_col="Equipement",
-            y_col="Duree_h",
-            title="Top 10 équipements",
-            xlabel="Equipement",
-            ylabel="Durée (h)",
-            rotation=35,
-            top_n=10
-        )
-        st.pyplot(fig_top, use_container_width=True)
+        st.pyplot(make_dark_bar_plot(kpis["top_equipements"], "Equipement", "Duree_h", "Top 10 équipements", "Equipement", "Durée (h)", 35, 10), use_container_width=True)
         st.dataframe(kpis["top_equipements"], use_container_width=True, height=240)
 
     st.subheader("Pareto par TAG | Equipement")
@@ -1542,22 +1310,21 @@ elif page == "Diagnostic & Plan d’action":
             Duree_totale_h=("Duree_h", "sum")
         ).reset_index()
 
-        priority_table = priority_table.rename(columns={
-            "Duree_totale_h": "Durée totale des arrêts (h)"
-        })
-
+        priority_table = priority_table.rename(columns={"Duree_totale_h": "Durée totale des arrêts (h)"})
         st.dataframe(priority_table, use_container_width=True, height=200)
 
-        fig_priority = make_dark_bar_plot(
-            priority_table,
-            x_col="Priorité",
-            y_col="Durée totale des arrêts (h)",
-            title="Durée totale par niveau de priorité",
-            xlabel="Priorité",
-            ylabel="Durée (h)",
-            rotation=0
+        st.pyplot(
+            make_dark_bar_plot(
+                priority_table,
+                "Priorité",
+                "Durée totale des arrêts (h)",
+                "Durée totale par niveau de priorité",
+                "Priorité",
+                "Durée (h)",
+                0
+            ),
+            use_container_width=True
         )
-        st.pyplot(fig_priority, use_container_width=True)
 
 
 elif page == "Données":
@@ -1567,21 +1334,14 @@ elif page == "Données":
     st.dataframe(df_filtered, use_container_width=True, height=520)
 
     csv_bytes = df_filtered.to_csv(index=False).encode("utf-8-sig")
-    st.download_button(
-        "Télécharger les données filtrées CSV",
-        data=csv_bytes,
-        file_name="donnees_filtrees.csv",
-        mime="text/csv"
-    )
+    st.download_button("Télécharger les données filtrées CSV", data=csv_bytes, file_name="donnees_filtrees.csv", mime="text/csv")
 
     col_a, col_b, col_c = st.columns(3)
 
     with col_a:
         render_info_card("Lignes filtrées", f"{len(df_filtered)}", "Nombre de lignes après filtres")
-
     with col_b:
         render_info_card("Zones", f"{df_filtered['Zone'].nunique() if 'Zone' in df_filtered.columns else 0}", "Nombre de zones visibles")
-
     with col_c:
         render_info_card("Equipements", f"{df_filtered['Equipement'].nunique() if 'Equipement' in df_filtered.columns else 0}", "Nombre d'équipements visibles")
 
