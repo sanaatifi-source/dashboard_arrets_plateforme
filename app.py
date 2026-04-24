@@ -20,6 +20,7 @@ st.set_page_config(
 
 LOGO_PATH = Path("logoo_v2.png")
 
+
 # =========================================================
 # STYLE GLOBAL
 # =========================================================
@@ -784,6 +785,31 @@ def make_dark_pie_plot(df, label_col, value_col, title):
     return fig
 
 
+def make_comparison_bar(comp_df, title):
+    fig, ax = plt.subplots(figsize=(10, 4.5), facecolor="#000000")
+    fig.patch.set_facecolor("#000000")
+    ax.set_facecolor("#000000")
+
+    x = range(len(comp_df))
+    width = 0.35
+
+    ax.bar([i - width / 2 for i in x], comp_df["Mois 1"], width=width, label="Mois 1", color="#f2b233")
+    ax.bar([i + width / 2 for i in x], comp_df["Mois 2"], width=width, label="Mois 2", color="#ffe08a")
+
+    ax.set_xticks(list(x))
+    ax.set_xticklabels(comp_df["Indicateur"], rotation=20, ha="right", color="white")
+    ax.set_title(title, color="white", fontsize=13, fontweight="bold")
+    ax.tick_params(axis="y", colors="white")
+    ax.grid(axis="y", linestyle="--", alpha=0.18, color="white")
+    ax.legend()
+
+    for spine in ax.spines.values():
+        spine.set_color("#4c5f7a")
+
+    plt.tight_layout()
+    return fig
+
+
 # =========================================================
 # PDF
 # =========================================================
@@ -992,7 +1018,14 @@ st.markdown(f"""
 # =========================================================
 page = st.sidebar.radio(
     "Navigation",
-    ["Dashboard principal", "Analyses complémentaires", "Diagnostic & Plan d’action", "Données", "Aide"]
+    [
+        "Dashboard principal",
+        "Analyses complémentaires",
+        "Diagnostic & Plan d’action",
+        "Comparaison mensuelle",
+        "Données",
+        "Aide"
+    ]
 )
 
 uploaded_file = st.sidebar.file_uploader(
@@ -1038,6 +1071,169 @@ seuil_mttr = st.sidebar.number_input("Saisir le seuil MTTR max acceptable (h)", 
 seuil_mtbf = st.sidebar.number_input("Saisir le seuil MTBF min acceptable (h)", min_value=0.0, value=0.0, step=1.0)
 
 
+# =========================================================
+# PAGE COMPARAISON MENSUELLE
+# =========================================================
+if page == "Comparaison mensuelle":
+    st.markdown('<div class="section-chip">Comparaison mensuelle</div>', unsafe_allow_html=True)
+
+    st.subheader("Importer deux fichiers mensuels à comparer")
+
+    c_file1, c_file2 = st.columns(2)
+
+    with c_file1:
+        file_m1 = st.file_uploader("Fichier mois 1", type=["xlsx", "csv"], key="file_m1")
+        nom_m1 = st.text_input("Nom du mois 1", value="Mois 1")
+        temps_ouv_m1 = st.number_input("Temps ouverture mois 1 (h)", min_value=0.0, value=temps_ouverture, step=1.0)
+        cadence_m1 = st.number_input("Cadence théorique mois 1", min_value=0.0, value=cadence_theorique, step=1.0)
+        tonnage_m1 = st.number_input("Tonnage réalisé mois 1", min_value=0.0, value=tonnage_realise, step=1.0)
+        qualite_m1 = st.number_input("Taux qualité mois 1 (%)", min_value=0.0, max_value=200.0, value=taux_qualite_pct, step=0.1) / 100
+
+    with c_file2:
+        file_m2 = st.file_uploader("Fichier mois 2", type=["xlsx", "csv"], key="file_m2")
+        nom_m2 = st.text_input("Nom du mois 2", value="Mois 2")
+        temps_ouv_m2 = st.number_input("Temps ouverture mois 2 (h)", min_value=0.0, value=temps_ouverture, step=1.0)
+        cadence_m2 = st.number_input("Cadence théorique mois 2", min_value=0.0, value=cadence_theorique, step=1.0)
+        tonnage_m2 = st.number_input("Tonnage réalisé mois 2", min_value=0.0, value=tonnage_realise, step=1.0)
+        qualite_m2 = st.number_input("Taux qualité mois 2 (%)", min_value=0.0, max_value=200.0, value=taux_qualite_pct, step=0.1) / 100
+
+    if file_m1 is None or file_m2 is None:
+        st.info("Importez les deux fichiers pour lancer la comparaison.")
+        st.stop()
+
+    df1_raw, missing1 = load_raw_data(file_m1, None)
+    df2_raw, missing2 = load_raw_data(file_m2, None)
+
+    if missing1:
+        st.error(f"Colonnes manquantes dans le fichier {nom_m1}")
+        st.write(missing1)
+        st.stop()
+
+    if missing2:
+        st.error(f"Colonnes manquantes dans le fichier {nom_m2}")
+        st.write(missing2)
+        st.stop()
+
+    df1 = prepare_data(df1_raw)
+    df2 = prepare_data(df2_raw)
+
+    k1 = compute_kpis(df1, annee, nom_m1, temps_ouv_m1, cadence_m1, tonnage_m1, qualite_m1)
+    k2 = compute_kpis(df2, annee, nom_m2, temps_ouv_m2, cadence_m2, tonnage_m2, qualite_m2)
+
+    comparison = pd.DataFrame({
+        "Indicateur": [
+            "TRS (%)",
+            "Disponibilité (%)",
+            "MTBF (h)",
+            "MTTR (h)",
+            "Maintenance totale (h)",
+            "Nombre arrêts maintenance",
+            "Arrêts planifiés (h)",
+            "Arrêts non planifiés (h)"
+        ],
+        nom_m1: [
+            k1["trs"],
+            k1["disponibilite"],
+            k1["mtbf"],
+            k1["mttr"],
+            k1["maintenance_total_h"],
+            k1["maintenance_total_n"],
+            k1["arrets_planifies"],
+            k1["temps_arrets_np"]
+        ],
+        nom_m2: [
+            k2["trs"],
+            k2["disponibilite"],
+            k2["mtbf"],
+            k2["mttr"],
+            k2["maintenance_total_h"],
+            k2["maintenance_total_n"],
+            k2["arrets_planifies"],
+            k2["temps_arrets_np"]
+        ]
+    })
+
+    comparison["Écart"] = comparison[nom_m2] - comparison[nom_m1]
+    comparison["Évolution (%)"] = comparison.apply(
+        lambda r: round((r["Écart"] / r[nom_m1] * 100), 2) if r[nom_m1] != 0 else 0,
+        axis=1
+    )
+
+    st.subheader("Tableau comparatif KPI")
+    st.dataframe(comparison, use_container_width=True, height=320)
+
+    graph_comp = comparison.rename(columns={nom_m1: "Mois 1", nom_m2: "Mois 2"})
+    fig_comp = make_comparison_bar(graph_comp.head(6), f"Comparaison KPI : {nom_m1} vs {nom_m2}")
+    st.pyplot(fig_comp, use_container_width=True)
+
+    st.subheader("Conclusion automatique de comparaison")
+
+    messages_comp = []
+
+    if k2["trs"] > k1["trs"]:
+        messages_comp.append(f"Le TRS s'est amélioré de {round(k2['trs'] - k1['trs'], 2)} points entre {nom_m1} et {nom_m2}.")
+    elif k2["trs"] < k1["trs"]:
+        messages_comp.append(f"Le TRS s'est dégradé de {round(k1['trs'] - k2['trs'], 2)} points entre {nom_m1} et {nom_m2}.")
+    else:
+        messages_comp.append("Le TRS est resté stable.")
+
+    if k2["disponibilite"] > k1["disponibilite"]:
+        messages_comp.append(f"La disponibilité maintenance s'est améliorée de {round(k2['disponibilite'] - k1['disponibilite'], 2)} points.")
+    elif k2["disponibilite"] < k1["disponibilite"]:
+        messages_comp.append(f"La disponibilité maintenance s'est dégradée de {round(k1['disponibilite'] - k2['disponibilite'], 2)} points.")
+    else:
+        messages_comp.append("La disponibilité maintenance est restée stable.")
+
+    if k2["maintenance_total_h"] < k1["maintenance_total_h"]:
+        messages_comp.append("La durée totale de maintenance a diminué, ce qui est favorable.")
+    elif k2["maintenance_total_h"] > k1["maintenance_total_h"]:
+        messages_comp.append("La durée totale de maintenance a augmenté. Une analyse des équipements critiques est recommandée.")
+    else:
+        messages_comp.append("La durée totale de maintenance est stable.")
+
+    st.markdown('<div class="executive-box">', unsafe_allow_html=True)
+    for msg in messages_comp:
+        st.write(f"- {msg}")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.subheader("Comparaison par zone")
+
+    zone1 = k1["rep_zone"].rename(columns={"Duree_h": nom_m1})
+    zone2 = k2["rep_zone"].rename(columns={"Duree_h": nom_m2})
+    zone_comp = pd.merge(zone1, zone2, on="Zone", how="outer").fillna(0)
+    zone_comp["Écart"] = zone_comp[nom_m2] - zone_comp[nom_m1]
+
+    st.dataframe(zone_comp, use_container_width=True, height=300)
+
+    fig_zone_comp, ax = plt.subplots(figsize=(11, 5), facecolor="#000000")
+    fig_zone_comp.patch.set_facecolor("#000000")
+    ax.set_facecolor("#000000")
+
+    zone_plot = zone_comp.sort_values("Écart", ascending=False).head(10)
+    ax.bar(zone_plot["Zone"].astype(str), zone_plot["Écart"], color="#f2b233")
+    ax.set_title("Écart de durée d'arrêt par zone", color="white", fontsize=13, fontweight="bold")
+    ax.set_ylabel("Écart durée (h)", color="white")
+    ax.tick_params(axis="x", rotation=30, colors="white")
+    ax.tick_params(axis="y", colors="white")
+    ax.grid(axis="y", linestyle="--", alpha=0.18, color="white")
+    st.pyplot(fig_zone_comp, use_container_width=True)
+
+    st.subheader("Comparaison des équipements critiques")
+
+    eq1 = k1["top_equipements"].rename(columns={"Duree_h": nom_m1})
+    eq2 = k2["top_equipements"].rename(columns={"Duree_h": nom_m2})
+    eq_comp = pd.merge(eq1, eq2, on="Equipement", how="outer").fillna(0)
+    eq_comp["Écart"] = eq_comp[nom_m2] - eq_comp[nom_m1]
+    eq_comp = eq_comp.sort_values("Écart", ascending=False)
+
+    st.dataframe(eq_comp, use_container_width=True, height=320)
+
+    st.stop()
+
+
+# =========================================================
+# SI PAS DE FICHIER POUR LES AUTRES PAGES
+# =========================================================
 if uploaded_file is None:
     st.info("Importez le fichier brut des arrêts depuis la barre latérale pour générer le dashboard.")
     st.markdown("""
@@ -1045,7 +1241,7 @@ if uploaded_file is None:
         <h3>Objectif de la plateforme</h3>
         <p>
         Cette application transforme automatiquement une base brute mensuelle des arrêts
-        en tableau de bord KPI maintenance avec analyses, graphiques, diagnostic et rapport PDF professionnel.
+        en tableau de bord KPI maintenance avec analyses, graphiques, diagnostic, comparaison mensuelle et rapport PDF professionnel.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -1396,7 +1592,7 @@ elif page == "Aide":
     st.subheader("Principe")
     st.write(
         "L'utilisateur importe seulement la base brute des arrêts. "
-        "La plateforme calcule automatiquement les KPI, affiche les graphiques, génère un diagnostic et crée un rapport PDF."
+        "La plateforme calcule automatiquement les KPI, affiche les graphiques, génère un diagnostic, permet la comparaison mensuelle et crée un rapport PDF."
     )
 
     st.subheader("Colonnes obligatoires")
@@ -1414,6 +1610,13 @@ elif page == "Aide":
         "Les seuils KPI ne sont pas fixés automatiquement. "
         "Ils doivent être saisis par l'utilisateur dans la barre latérale. "
         "Si aucun seuil n'est saisi, les alertes automatiques sont désactivées."
+    )
+
+    st.subheader("Comparaison mensuelle")
+    st.write(
+        "L’onglet Comparaison mensuelle permet d’importer deux fichiers mensuels différents. "
+        "La plateforme calcule les KPI de chaque mois et affiche les écarts, les graphiques comparatifs, "
+        "la comparaison par zone et la comparaison des équipements critiques."
     )
 
     st.subheader("Formules KPI utilisées")
